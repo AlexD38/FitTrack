@@ -1,10 +1,13 @@
 import {
+  faBookOpen,
   faChartLine,
   faCheck,
   faChevronDown,
   faDumbbell,
   faGear,
   faMoon,
+  faPen,
+  faPlay,
   faPlus,
   faStopwatch,
   faSun,
@@ -15,6 +18,7 @@ import {
 export const navIcons = {
   dashboard: faChartLine,
   journal: faDumbbell,
+  library: faBookOpen,
   timer: faStopwatch,
   weight: faWeightScale,
 }
@@ -27,4 +31,6 @@ export const uiIcons = {
   moon: faMoon,
   check: faCheck,
   chevronDown: faChevronDown,
+  edit: faPen,
+  play: faPlay,
 }

@@ -43,24 +43,31 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
     setOpen(false)
   }
 
-  const label = value?.trim() ? value : placeholder || t('dashboard.selectExercise')
-
   return (
     <div className="ft-exercise-picker">
+      <input
+        className="ft-input ft-exercise-picker__input"
+        value={value ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder || t('journal.exerciseName')}
+        autoComplete="off"
+        aria-label={t('journal.exerciseName')}
+      />
       <button
         type="button"
-        className={`ft-exercise-picker__trigger${!value?.trim() ? ' ft-exercise-picker__trigger--empty' : ''}`}
+        className="ft-exercise-picker__browse"
         onClick={() => setOpen(true)}
-        aria-haspopup="listbox"
+        aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label={t('dashboard.selectExercise')}
+        title={t('dashboard.selectExercise')}
       >
-        <span className="ft-exercise-picker__label">{label}</span>
-        <span className="ft-exercise-picker__chevron" aria-hidden="true">
-          ▾
-        </span>
+        ▾
       </button>
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title={t('dashboard.selectExercise')}>
+        <p className="ft-exercise-picker__compose-hint">{t('journal.exerciseRenameHint')}</p>
+
         <div className="ft-exercise-picker__filters" role="tablist">
           <button
             type="button"

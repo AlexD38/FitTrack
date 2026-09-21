@@ -5,6 +5,7 @@ import { navIcons } from '../lib/icons'
 const TABS = [
   { id: 'dashboard', icon: navIcons.dashboard, labelKey: 'nav.dashboard' },
   { id: 'journal', icon: navIcons.journal, labelKey: 'nav.journal' },
+  { id: 'library', icon: navIcons.library, labelKey: 'nav.library' },
   { id: 'timer', icon: navIcons.timer, labelKey: 'nav.timer' },
   { id: 'weight', icon: navIcons.weight, labelKey: 'nav.weight' },
 ]

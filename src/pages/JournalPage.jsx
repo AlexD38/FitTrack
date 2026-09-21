@@ -8,9 +8,11 @@ import { SessionForm } from '../components/SessionForm'
 import { LiveWorkout } from '../components/LiveWorkout'
 import { TemplatePicker } from '../components/TemplatePicker'
 import { SessionExercisesView } from '../components/SessionExercisesView'
+import { FaIcon } from '../components/FaIcon'
 import { staggerListItems } from '../lib/pageTransition'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
+import { uiIcons } from '../lib/icons'
 
 export function JournalPage({ onOpenSettings }) {
   const {
@@ -105,32 +107,21 @@ export function JournalPage({ onOpenSettings }) {
                 session={s}
                 expanded={expanded}
                 onToggle={toggleExpand}
+                onEdit={openEdit}
+                onReplay={handleStartLive}
               >
-                <SessionExercisesView exercises={s.exercises} />
-                {s.notes && <p className="ft-session-card__notes">{s.notes}</p>}
-                <div className="ft-btn-row" style={{ flexWrap: 'wrap' }}>
+                <div className="ft-session-card__toolbar">
                   <button
                     type="button"
-                    className="ft-btn ft-btn--primary"
-                    onClick={() => handleStartLive(s)}
-                  >
-                    {t('live.start')}
-                  </button>
-                  <button
-                    type="button"
-                    className="ft-btn ft-btn--secondary"
-                    onClick={() => openEdit(s)}
-                  >
-                    {t('common.edit')}
-                  </button>
-                  <button
-                    type="button"
-                    className="ft-btn ft-btn--danger"
+                    className="ft-btn ft-btn--danger ft-session-card__delete"
                     onClick={() => handleDeleteFromList(s)}
                   >
+                    <FaIcon icon={uiIcons.trash} className="ft-session-card__delete-icon" />
                     {t('common.delete')}
                   </button>
                 </div>
+                <SessionExercisesView exercises={s.exercises} />
+                {s.notes && <p className="ft-session-card__notes">{s.notes}</p>}
               </SessionCard>
             )
           })

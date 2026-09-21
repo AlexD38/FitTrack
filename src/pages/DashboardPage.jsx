@@ -14,46 +14,38 @@ import {
   sessionsThisMonth,
   weekVolumeTotal,
   weeklyVolume,
-  topExerciseProgress,
   muscleDistribution,
   weightSeries,
-  weightDelta,
   getAllExerciseNames,
   exerciseProgressSeries,
 } from '../lib/stats'
 
 export function DashboardPage({ onOpenSettings }) {
-  const { sessions, weightEntries, settings, setExerciseGoal } = useFitness()
+  const { sessions, weightEntries, settings } = useFitness()
   const { t } = useLocale()
   const exerciseNames = useMemo(() => getAllExerciseNames(sessions), [sessions])
   const [selectedExercise, setSelectedExercise] = useState(exerciseNames[0] ?? '')
-  const [goalDraft, setGoalDraft] = useState('')
 
   useEffect(() => {
-    if (exerciseNames.length && !exerciseNames.includes(selectedExercise)) {
+    if (!exerciseNames.length) {
+      setSelectedExercise('')
+      return
+    }
+    if (!exerciseNames.includes(selectedExercise)) {
       setSelectedExercise(exerciseNames[0])
     }
   }, [exerciseNames, selectedExercise])
 
-  useEffect(() => {
-    const g = settings.exerciseGoals?.[selectedExercise]
-    setGoalDraft(g != null ? String(g) : '')
-  }, [selectedExercise, settings.exerciseGoals])
-
   const monthCount = sessionsThisMonth(sessions)
   const weekVol = weekVolumeTotal(sessions)
-  const progress = topExerciseProgress(sessions)
-  const weightInfo = weightDelta(weightEntries)
-  const unit = settings.weightUnit ?? 'kg'
 
   const volumeData = weeklyVolume(sessions)
   const muscleData = muscleDistribution(sessions)
-  const exerciseData = exerciseProgressSeries(sessions, selectedExercise)
+  const exerciseData = useMemo(
+    () => exerciseProgressSeries(sessions, selectedExercise),
+    [sessions, selectedExercise],
+  )
   const weightData = weightSeries(weightEntries, 90)
-  const currentMax = exerciseData.length ? exerciseData[exerciseData.length - 1].weight : null
-  const forceGoal = settings.exerciseGoals?.[selectedExercise]
-  const forcePct =
-    forceGoal && currentMax != null ? Math.min(100, Math.round((currentMax / forceGoal) * 100)) : null
 
   const goalEntries = Object.entries(settings.exerciseGoals ?? {})
 
@@ -64,25 +56,42 @@ export function DashboardPage({ onOpenSettings }) {
       <div className="ft-kpi-grid">
         <KpiCard label={t('dashboard.sessionsMonth')} value={monthCount} />
         <KpiCard label={t('dashboard.weekVolume')} value={weekVol} sub="kg" />
-        <KpiCard
-          label={t('dashboard.topProgress')}
-          value={progress ? `+${progress.delta} kg` : '—'}
-          sub={progress?.name}
-        />
-        <KpiCard
-          label={t('dashboard.currentWeight')}
-          value={weightInfo.current ? `${weightInfo.current} ${unit}` : '—'}
-          sub={
-            settings.weightGoal
-              ? `${t('weight.goal')}: ${settings.weightGoal} ${unit}`
-              : weightInfo.sinceLast
-                ? `${weightInfo.sinceLast > 0 ? '+' : ''}${weightInfo.sinceLast.toFixed(1)} ${unit}`
-                : undefined
-          }
-        />
       </div>
 
       <ActivityHeatmap sessions={sessions} />
+
+      <section className="ft-section ft-glass ft-glass--pad">
+        <div className="ft-section__head">
+          <h2 className="ft-section__title">{t('dashboard.exerciseProgress')}</h2>
+        </div>
+        {exerciseNames.length === 0 ? (
+          <EmptyState message={t('dashboard.noExercises')} />
+        ) : (
+          <>
+            <label className="ft-field__label" htmlFor="ft-dash-exercise">
+              {t('dashboard.selectExercise')}
+            </label>
+            <select
+              id="ft-dash-exercise"
+              className="ft-select ft-select--block"
+              value={selectedExercise}
+              onChange={(e) => setSelectedExercise(e.target.value)}
+            >
+              {exerciseNames.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+
+            {exerciseData.length > 0 ? (
+              <ExerciseProgressChart data={exerciseData} />
+            ) : (
+              <EmptyState message={t('dashboard.noProgress')} />
+            )}
+          </>
+        )}
+      </section>
 
       {goalEntries.length > 0 && (
         <section className="ft-section ft-glass ft-glass--pad">
@@ -118,64 +127,6 @@ export function DashboardPage({ onOpenSettings }) {
           <VolumeChart data={volumeData} />
         ) : (
           <EmptyState message={t('dashboard.noVolume')} />
-        )}
-      </section>
-
-      <section className="ft-section ft-glass ft-glass--pad">
-        <div className="ft-section__head">
-          <h2 className="ft-section__title">{t('dashboard.exerciseProgress')}</h2>
-          {exerciseNames.length > 0 && (
-            <select
-              className="ft-select"
-              value={selectedExercise}
-              onChange={(e) => setSelectedExercise(e.target.value)}
-            >
-              {exerciseNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-        {selectedExercise && (
-          <div className="ft-goal-row" style={{ marginBottom: 'var(--space-4)' }}>
-            <input
-              className="ft-input"
-              type="number"
-              inputMode="decimal"
-              placeholder={t('goals.target')}
-              value={goalDraft}
-              onChange={(e) => setGoalDraft(e.target.value)}
-            />
-            <button
-              type="button"
-              className="ft-btn ft-btn--secondary"
-              onClick={() => setExerciseGoal(selectedExercise, goalDraft)}
-            >
-              {t('goals.set')}
-            </button>
-          </div>
-        )}
-        {forcePct != null && (
-          <div className="ft-force-goal" style={{ marginBottom: 'var(--space-4)' }}>
-            <div className="ft-force-goal__head">
-              <span>{t('goals.progress')}</span>
-              <span>
-                {forcePct >= 100
-                  ? t('goals.reached')
-                  : `${(forceGoal - currentMax).toFixed(1)} kg ${t('goals.toGoal')}`}
-              </span>
-            </div>
-            <div className="ft-force-goal__bar">
-              <div className="ft-force-goal__fill" style={{ width: `${forcePct}%` }} />
-            </div>
-          </div>
-        )}
-        {exerciseData.length >= 2 ? (
-          <ExerciseProgressChart data={exerciseData} />
-        ) : (
-          <EmptyState message={t('dashboard.noProgress')} />
         )}
       </section>
 

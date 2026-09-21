@@ -4,6 +4,7 @@ import { PROGRAM_TEMPLATES, templateToSession } from '../lib/templates'
 import { useLocale } from '../contexts/LocaleContext'
 import { muscleLabel } from '../lib/i18n'
 import { sessionVolume } from '../lib/stats'
+import { BodyMuscleMap } from './BodyMuscleMap'
 
 export function TemplatePicker({
   onSelect,
@@ -32,9 +33,11 @@ export function TemplatePicker({
             className="ft-template-card ft-template-card--custom"
             onClick={onCustom}
           >
-            <span className="ft-template-card__name">{t('templates.custom')}</span>
-            <span className="ft-template-card__meta">{t('templates.customMeta')}</span>
-            <span className="ft-template-card__muscles">{t('templates.customHint')}</span>
+            <span className="ft-template-card__text">
+              <span className="ft-template-card__name">{t('templates.custom')}</span>
+              <span className="ft-template-card__meta">{t('templates.customMeta')}</span>
+              <span className="ft-template-card__muscles">{t('templates.customHint')}</span>
+            </span>
           </button>
         )}
         {PROGRAM_TEMPLATES.map((tpl) => (
@@ -44,13 +47,16 @@ export function TemplatePicker({
             className="ft-template-card"
             onClick={() => onSelect(templateToSession(tpl, locale))}
           >
-            <span className="ft-template-card__name">{t(`templates.${tpl.id}`)}</span>
-            <span className="ft-template-card__meta">
-              {tpl.exercises.length} {t('common.exercises')}
+            <span className="ft-template-card__text">
+              <span className="ft-template-card__name">{t(`templates.${tpl.id}`)}</span>
+              <span className="ft-template-card__meta">
+                {tpl.exercises.length} {t('common.exercises')}
+              </span>
+              <span className="ft-template-card__muscles">
+                {tpl.muscles.map((m) => muscleLabel(locale, m)).join(' · ')}
+              </span>
             </span>
-            <span className="ft-template-card__muscles">
-              {tpl.muscles.map((m) => muscleLabel(locale, m)).join(' · ')}
-            </span>
+            <BodyMuscleMap active={tpl.muscles} size="xs" className="ft-template-card__body" />
           </button>
         ))}
       </div>
@@ -64,7 +70,8 @@ export function TemplatePicker({
               const dateStr = format(parseISO(session.date), 'EEE d MMM', { locale: dateLocale })
               const exCount = session.exercises?.length ?? 0
               const vol = sessionVolume(session)
-              const muscles = (session.muscles ?? [])
+              const muscles = session.muscles ?? []
+              const muscleText = muscles
                 .slice(0, 3)
                 .map((m) => muscleLabel(locale, m))
                 .join(' · ')
@@ -75,12 +82,21 @@ export function TemplatePicker({
                     className="ft-template-past"
                     onClick={() => onSelectPast(session)}
                   >
-                    <span className="ft-template-past__date">{dateStr}</span>
-                    <span className="ft-template-past__meta">
-                      {exCount} {t('common.exercises')} · {vol.toLocaleString()} kg
+                    <span className="ft-template-past__text">
+                      <span className="ft-template-past__date">{dateStr}</span>
+                      <span className="ft-template-past__meta">
+                        {exCount} {t('common.exercises')} · {vol.toLocaleString()} kg
+                      </span>
+                      {muscleText && (
+                        <span className="ft-template-past__muscles">{muscleText}</span>
+                      )}
                     </span>
-                    {muscles && (
-                      <span className="ft-template-past__muscles">{muscles}</span>
+                    {muscles.length > 0 && (
+                      <BodyMuscleMap
+                        active={muscles}
+                        size="xs"
+                        className="ft-template-past__body"
+                      />
                     )}
                   </button>
                 </li>

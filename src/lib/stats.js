@@ -66,20 +66,44 @@ export function getAllExerciseNames(sessions) {
 
 export function exerciseProgressSeries(sessions, exerciseName) {
   if (!exerciseName) return []
-  const points = []
+  const byDate = new Map()
+  const target = exerciseName.trim().toLowerCase()
 
   for (const s of sessions) {
-    const ex = (s.exercises ?? []).find(
-      (e) => e.name?.trim().toLowerCase() === exerciseName.toLowerCase(),
+    const matches = (s.exercises ?? []).filter(
+      (e) => e.name?.trim().toLowerCase() === target,
     )
-    if (!ex || !ex.sets?.length) continue
-    const maxWeight = Math.max(...ex.sets.map((set) => set.weight || 0))
-    if (maxWeight > 0) {
-      points.push({ date: s.date, weight: maxWeight })
+    if (!matches.length) continue
+
+    const maxWeight = Math.max(
+      0,
+      ...matches.flatMap((ex) => (ex.sets ?? []).map((set) => Number(set.weight) || 0)),
+    )
+    const volume = matches.reduce(
+      (sum, ex) =>
+        sum +
+        (ex.sets ?? []).reduce(
+          (sSum, set) => sSum + (Number(set.weight) || 0) * (Number(set.reps) || 0),
+          0,
+        ),
+      0,
+    )
+
+    if (maxWeight <= 0 && volume <= 0) continue
+
+    const prev = byDate.get(s.date)
+    if (!prev || maxWeight > prev.weight) {
+      byDate.set(s.date, {
+        date: s.date,
+        weight: maxWeight,
+        volume,
+      })
+    } else if (maxWeight === prev.weight && volume > prev.volume) {
+      byDate.set(s.date, { ...prev, volume })
     }
   }
 
-  return points.sort((a, b) => a.date.localeCompare(b.date))
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
 
 export function topExerciseProgress(sessions, days = 30) {

@@ -194,10 +194,11 @@ export function LiveWorkout({ open, initial, onClose, onSaved }) {
       if (!prev) return prev
       const exercises = prev.exercises.map((ex, i) => (i === exIdx ? { ...ex, name } : ex))
       const fromEx = musclesFromExerciseNames(exercises.map((ex) => ex.name))
+      const hasNamed = exercises.some((ex) => ex.name?.trim())
       return {
         ...prev,
         exercises,
-        muscles: fromEx.length ? fromEx : prev.muscles,
+        muscles: fromEx.length ? fromEx : hasNamed ? prev.muscles : [],
       }
     })
   }

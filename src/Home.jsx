@@ -3,6 +3,7 @@ import { BottomNav } from './components/BottomNav'
 import { SettingsMenu, useSettingsSheet } from './components/SettingsMenu'
 import { DashboardPage } from './pages/DashboardPage'
 import { JournalPage } from './pages/JournalPage'
+import { LibraryPage } from './pages/LibraryPage'
 import { TimerPage } from './pages/TimerPage'
 import { WeightPage } from './pages/WeightPage'
 import { runPageTransition } from './lib/pageTransition'
@@ -36,6 +37,7 @@ export default function Home() {
       <main className="ft-page" ref={pageRef}>
         {screen === 'dashboard' && <DashboardPage {...settingsProps} />}
         {screen === 'journal' && <JournalPage {...settingsProps} />}
+        {screen === 'library' && <LibraryPage {...settingsProps} />}
         {screen === 'timer' && <TimerPage {...settingsProps} />}
         {screen === 'weight' && <WeightPage {...settingsProps} />}
       </main>
