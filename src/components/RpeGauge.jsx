@@ -21,20 +21,33 @@ export function RpeGauge({ value, onChange, iconColor }) {
   const numeric = value === '' || value == null || Number.isNaN(Number(value)) ? 5 : Number(value)
   const thumb = rpeColor(numeric)
   const iconTint = iconColor ?? thumb
+  const pct = ((numeric - 1) / 9) * 100
 
   return (
-    <div className="ft-rpe">
+    <div
+      className="ft-rpe"
+      style={{
+        '--ft-rpe-thumb': thumb,
+        '--ft-rpe-pct': `${pct}%`,
+      }}
+    >
       <div className="ft-rpe__head">
         <span className="ft-rpe__label">
-          <FaIcon icon={uiIcons.rpe} className="ft-rpe__icon" style={{ color: iconTint }} />
+          <span className="ft-rpe__icon-wrap" style={{ color: iconTint, background: `${iconTint}22` }}>
+            <FaIcon icon={uiIcons.rpe} className="ft-rpe__icon" />
+          </span>
           {t('rpe.label')}
         </span>
-        <span className="ft-rpe__value" style={{ color: thumb }}>
+        <span className="ft-rpe__value" style={{ color: thumb, background: `${thumb}1f` }}>
           {numeric}
         </span>
       </div>
-      <div className="ft-rpe__track" style={{ '--ft-rpe-thumb': thumb }}>
-        <div className="ft-rpe__gradient" style={{ background: RPE_GRADIENT }} aria-hidden="true" />
+
+      <div className="ft-rpe__track">
+        <div className="ft-rpe__rail" aria-hidden="true">
+          <div className="ft-rpe__gradient" style={{ background: RPE_GRADIENT }} />
+          <div className="ft-rpe__glow" />
+        </div>
         <input
           className="ft-rpe__input"
           type="range"
@@ -49,6 +62,19 @@ export function RpeGauge({ value, onChange, iconColor }) {
           aria-valuenow={numeric}
         />
       </div>
+
+      <div className="ft-rpe__scale" aria-hidden="true">
+        {Array.from({ length: 10 }, (_, i) => (
+          <span
+            key={i + 1}
+            className={`ft-rpe__tick${i + 1 === numeric ? ' ft-rpe__tick--active' : ''}`}
+            style={i + 1 === numeric ? { color: thumb } : undefined}
+          >
+            {i + 1}
+          </span>
+        ))}
+      </div>
+
       <div className="ft-rpe__ends" aria-hidden="true">
         <span>{t('rpe.easy')}</span>
         <span>{t('rpe.hard')}</span>

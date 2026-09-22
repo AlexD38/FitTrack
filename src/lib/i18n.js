@@ -68,7 +68,7 @@ const STRINGS = {
       empty: 'Aucun exercice trouvé.',
     },
     journal: {
-      title: 'Journal',
+      title: 'Séances',
       newSession: 'Nouvelle séance',
       editSession: 'Modifier la séance',
       editExercise: 'Modifier l\'exercice',
@@ -285,7 +285,7 @@ const STRINGS = {
       empty: 'No exercises found.',
     },
     journal: {
-      title: 'Journal',
+      title: 'Workouts',
       newSession: 'New session',
       editSession: 'Edit session',
       editExercise: 'Edit exercise',

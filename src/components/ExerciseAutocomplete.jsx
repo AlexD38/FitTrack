@@ -6,6 +6,8 @@ import { useLocale } from '../contexts/LocaleContext'
 import { useFitness } from '../contexts/FitnessContext'
 import { getAllExerciseNames } from '../lib/stats'
 import { BottomSheet } from './BottomSheet'
+import { FaIcon } from './FaIcon'
+import { uiIcons } from '../lib/icons'
 
 export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const { locale, t } = useLocale()
@@ -45,25 +47,27 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
 
   return (
     <div className="ft-exercise-picker">
-      <input
-        className="ft-input ft-exercise-picker__input"
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder || t('journal.exerciseName')}
-        autoComplete="off"
-        aria-label={t('journal.exerciseName')}
-      />
-      <button
-        type="button"
-        className="ft-exercise-picker__browse"
-        onClick={() => setOpen(true)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={t('dashboard.selectExercise')}
-        title={t('dashboard.selectExercise')}
-      >
-        ▾
-      </button>
+      <div className="ft-exercise-picker__field">
+        <input
+          className="ft-input ft-exercise-picker__input"
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder || t('journal.exerciseName')}
+          autoComplete="off"
+          aria-label={t('journal.exerciseName')}
+        />
+        <button
+          type="button"
+          className="ft-exercise-picker__browse"
+          onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={t('dashboard.selectExercise')}
+          title={t('dashboard.selectExercise')}
+        >
+          <FaIcon icon={uiIcons.chevronDown} className="ft-exercise-picker__browse-icon" />
+        </button>
+      </div>
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title={t('dashboard.selectExercise')}>
         <p className="ft-exercise-picker__compose-hint">{t('journal.exerciseRenameHint')}</p>

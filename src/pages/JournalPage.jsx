@@ -12,7 +12,7 @@ import { FaIcon } from '../components/FaIcon'
 import { staggerListItems } from '../lib/pageTransition'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
-import { pastSessionsOnly, SESSION_STATUS, findActiveSession, normalizeSessionStatus, todayIsoDate } from '../lib/sessionStatus'
+import { pastSessionsOnly, SESSION_STATUS, findActiveSession, normalizeSessionStatus, resolveSessionStatus, isActiveSession, todayIsoDate } from '../lib/sessionStatus'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { uiIcons } from '../lib/icons'
 
@@ -41,10 +41,21 @@ export function JournalPage({ onOpenSettings }) {
     }
   }, [sessions, statusFilter])
 
-  const filteredSessions = useMemo(() => {
-    if (statusFilter === 'all') return sessions
-    return sessions.filter((s) => normalizeSessionStatus(s.status) === statusFilter)
+  const pinnedActive = useMemo(() => {
+    if (statusFilter !== 'all' && statusFilter !== SESSION_STATUS.ACTIVE) return []
+    return sessions.filter(isActiveSession)
   }, [sessions, statusFilter])
+
+  const filteredSessions = useMemo(() => {
+    if (statusFilter === 'all') {
+      // Active sessions are rendered in the pinned block above.
+      return sessions.filter((s) => !isActiveSession(s))
+    }
+    if (statusFilter === SESSION_STATUS.ACTIVE) return []
+    return sessions.filter((s) => resolveSessionStatus(s) === statusFilter)
+  }, [sessions, statusFilter])
+
+  const listEmpty = pinnedActive.length === 0 && filteredSessions.length === 0
 
   const liveSession = useMemo(
     () => (liveId ? sessions.find((s) => s.id === liveId) : null),
@@ -227,19 +238,32 @@ export function JournalPage({ onOpenSettings }) {
       </div>
 
       <div ref={listRef}>
-        {filteredSessions.length === 0 ? (
+        {listEmpty ? (
           <EmptyState message={t('journal.empty')} />
         ) : (
-          filteredSessions.map((s) => (
-            <SessionCard
-              key={s.id}
-              session={s}
-              onOpen={openDetail}
-              onEdit={openEdit}
-              onReplay={handlePrimaryAction}
-              primaryLabel={primaryLabel(s)}
-            />
-          ))
+          <>
+            {pinnedActive.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                pinned
+                onOpen={openDetail}
+                onEdit={openEdit}
+                onReplay={handlePrimaryAction}
+                primaryLabel={primaryLabel(s)}
+              />
+            ))}
+            {filteredSessions.map((s) => (
+              <SessionCard
+                key={s.id}
+                session={s}
+                onOpen={openDetail}
+                onEdit={openEdit}
+                onReplay={handlePrimaryAction}
+                primaryLabel={primaryLabel(s)}
+              />
+            ))}
+          </>
         )}
       </div>
 

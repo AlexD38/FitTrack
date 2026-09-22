@@ -9,7 +9,7 @@ import { uiIcons } from '../lib/icons'
 import { BodyMuscleMap } from './BodyMuscleMap'
 import { normalizeSessionStatus, statusTagKey } from '../lib/sessionStatus'
 
-export function SessionCard({ session, onOpen, onEdit, onReplay, primaryLabel }) {
+export function SessionCard({ session, pinned = false, onOpen, onEdit, onReplay, primaryLabel }) {
   const { locale, t } = useLocale()
   const dateLocale = locale === 'fr' ? fr : enUS
   const dateStr = format(parseISO(session.date), 'EEEE d MMMM yyyy', { locale: dateLocale })
@@ -20,7 +20,9 @@ export function SessionCard({ session, onOpen, onEdit, onReplay, primaryLabel })
 
   return (
     <article
-      className="ft-glass ft-glass--pad ft-session-card ft-stagger-item ft-session-card--clickable"
+      className={`ft-glass ft-glass--pad ft-session-card ft-stagger-item ft-session-card--clickable${
+        pinned ? ' ft-session-card--pinned' : ''
+      }`}
       role="button"
       tabIndex={0}
       onClick={() => onOpen?.(session)}
@@ -33,10 +35,7 @@ export function SessionCard({ session, onOpen, onEdit, onReplay, primaryLabel })
     >
       <div className="ft-session-card__summary">
         <div className="ft-session-card__summary-main">
-          <div className="ft-session-card__title-row">
-            <p className="ft-session-card__date">{dateStr}</p>
-            <span className={`ft-status-tag ft-status-tag--${status}`}>{t(statusTagKey(status))}</span>
-          </div>
+          <p className="ft-session-card__date">{dateStr}</p>
           <div className="ft-session-card__meta">
             <span>
               {exCount} {t('common.exercises')}
@@ -59,6 +58,7 @@ export function SessionCard({ session, onOpen, onEdit, onReplay, primaryLabel })
             </div>
           )}
         </div>
+        <span className={`ft-status-tag ft-status-tag--${status}`}>{t(statusTagKey(status))}</span>
       </div>
 
       {muscles.length > 0 && (
