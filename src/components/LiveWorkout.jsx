@@ -6,6 +6,7 @@ import { FaIcon } from './FaIcon'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { normalizeSetsForSave } from '../lib/sets'
 import { SESSION_STATUS } from '../lib/sessionStatus'
+import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
 import { uiIcons } from '../lib/icons'
 
 function buildLiveState(payload) {
@@ -64,14 +65,15 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   useEffect(() => {
     if (!open || !initial) return
     setWorkout(buildLiveState(initial))
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
     // Reset only when opening a different session — not on every sessions refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [open, sessionId])
+
+  useEffect(() => {
+    if (!open) return
+    lockBodyScroll()
+    return () => unlockBodyScroll()
+  }, [open])
 
   const persistActive = useCallback(() => {
     const id = sessionIdRef.current

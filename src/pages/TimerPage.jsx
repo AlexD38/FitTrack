@@ -5,6 +5,7 @@ import { SettingsButton } from '../components/SettingsMenu'
 import { TimeRollPicker, partsToSeconds, secondsToParts } from '../components/TimeRollPicker'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
+import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
 
 const PRESETS = [
   { seconds: 60, labelKey: 'timer.preset1' },
@@ -98,11 +99,8 @@ function TimerFocusModal({
 
   useEffect(() => {
     if (!open) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
+    lockBodyScroll()
+    return () => unlockBodyScroll()
   }, [open])
 
   useEffect(() => {

@@ -1,25 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
+import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
 
 export function BottomSheet({ open, onClose, title, children, showBack = false }) {
   const { t } = useLocale()
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
   useEffect(() => {
     if (!open) return
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') onCloseRef.current?.()
     }
     document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    lockBodyScroll()
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
+      unlockBodyScroll()
     }
-  }, [open, onClose])
+  }, [open])
 
   if (!open || typeof document === 'undefined') return null
 
