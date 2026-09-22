@@ -66,10 +66,17 @@ export function getAllExerciseNames(sessions) {
   return [...names].sort()
 }
 
+/**
+ * Weight progression for one exercise across sessions.
+ * Only sessions that actually include this exercise with a loaded set (weight > 0)
+ * are plotted — other sessions never insert a zero in the middle of the series.
+ */
 export function exerciseProgressSeries(sessions, exerciseName) {
   if (!exerciseName) return []
-  const byDate = new Map()
   const target = exerciseName.trim().toLowerCase()
+  if (!target) return []
+
+  const points = []
 
   for (const s of statsSessionsOnly(sessions)) {
     const matches = (s.exercises ?? []).filter(
@@ -77,31 +84,46 @@ export function exerciseProgressSeries(sessions, exerciseName) {
     )
     if (!matches.length) continue
 
-    const maxWeight = Math.max(
-      0,
-      ...matches.flatMap((ex) => (ex.sets ?? []).map((set) => Number(set.weight) || 0)),
+    const setWeights = matches.flatMap((ex) =>
+      (ex.sets ?? [])
+        .map((set) => Number(set.weight))
+        .filter((w) => Number.isFinite(w) && w > 0),
     )
+    if (!setWeights.length) continue
+
+    const maxWeight = Math.max(...setWeights)
     const volume = matches.reduce(
       (sum, ex) =>
         sum +
-        (ex.sets ?? []).reduce(
-          (sSum, set) => sSum + (Number(set.weight) || 0) * (Number(set.reps) || 0),
-          0,
-        ),
+        (ex.sets ?? []).reduce((sSum, set) => {
+          const w = Number(set.weight)
+          const r = Number(set.reps)
+          if (!Number.isFinite(w) || w <= 0 || !Number.isFinite(r) || r <= 0) return sSum
+          return sSum + w * r
+        }, 0),
       0,
     )
 
-    if (maxWeight <= 0 && volume <= 0) continue
+    points.push({
+      id: s.id,
+      date: s.date,
+      weight: maxWeight,
+      volume,
+    })
+  }
 
-    const prev = byDate.get(s.date)
-    if (!prev || maxWeight > prev.weight) {
-      byDate.set(s.date, {
-        date: s.date,
-        weight: maxWeight,
-        volume,
-      })
-    } else if (maxWeight === prev.weight && volume > prev.volume) {
-      byDate.set(s.date, { ...prev, volume })
+  points.sort((a, b) => {
+    const byDate = a.date.localeCompare(b.date)
+    if (byDate !== 0) return byDate
+    return String(a.id).localeCompare(String(b.id))
+  })
+
+  // Same calendar day: keep the best lift for that exercise only (still no foreign sessions).
+  const byDate = new Map()
+  for (const p of points) {
+    const prev = byDate.get(p.date)
+    if (!prev || p.weight > prev.weight || (p.weight === prev.weight && p.volume > prev.volume)) {
+      byDate.set(p.date, p)
     }
   }
 

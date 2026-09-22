@@ -53,6 +53,7 @@ export function ExerciseProgressChart({ data }) {
             strokeWidth={2.5}
             dot={{ fill: 'var(--color-accent-2)', r: 4 }}
             activeDot={{ r: 6 }}
+            connectNulls={false}
           />
         </LineChart>
       </ResponsiveContainer>
