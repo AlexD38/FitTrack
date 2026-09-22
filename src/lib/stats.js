@@ -10,6 +10,7 @@ import {
   subDays,
 } from 'date-fns'
 import { fr, enUS } from 'date-fns/locale'
+import { statsSessionsOnly } from './sessionStatus'
 
 export function sessionVolume(session) {
   if (!session?.exercises) return 0
@@ -25,7 +26,7 @@ export function sessionsThisMonth(sessions) {
   const now = new Date()
   const start = startOfMonth(now)
   const end = endOfMonth(now)
-  return sessions.filter((s) => {
+  return statsSessionsOnly(sessions).filter((s) => {
     const d = parseISO(s.date)
     return isWithinInterval(d, { start, end })
   }).length
@@ -35,11 +36,12 @@ export function weeklyVolume(sessions, weeks = 8) {
   const localeMap = { fr, en: enUS }
   const result = []
   const now = new Date()
+  const past = statsSessionsOnly(sessions)
 
   for (let i = weeks - 1; i >= 0; i--) {
     const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 })
     const weekEnd = endOfWeek(subWeeks(now, i), { weekStartsOn: 1 })
-    const vol = sessions
+    const vol = past
       .filter((s) => {
         const d = parseISO(s.date)
         return isWithinInterval(d, { start: weekStart, end: weekEnd })
@@ -56,7 +58,7 @@ export function weeklyVolume(sessions, weeks = 8) {
 
 export function getAllExerciseNames(sessions) {
   const names = new Set()
-  for (const s of sessions) {
+  for (const s of statsSessionsOnly(sessions)) {
     for (const ex of s.exercises ?? []) {
       if (ex.name?.trim()) names.add(ex.name.trim())
     }
@@ -69,7 +71,7 @@ export function exerciseProgressSeries(sessions, exerciseName) {
   const byDate = new Map()
   const target = exerciseName.trim().toLowerCase()
 
-  for (const s of sessions) {
+  for (const s of statsSessionsOnly(sessions)) {
     const matches = (s.exercises ?? []).filter(
       (e) => e.name?.trim().toLowerCase() === target,
     )
@@ -131,7 +133,7 @@ export function topExerciseProgress(sessions, days = 30) {
 
 export function muscleDistribution(sessions) {
   const counts = {}
-  for (const s of sessions) {
+  for (const s of statsSessionsOnly(sessions)) {
     for (const m of s.muscles ?? []) {
       counts[m] = (counts[m] || 0) + 1
     }
@@ -143,7 +145,7 @@ export function weekVolumeTotal(sessions) {
   const now = new Date()
   const weekStart = startOfWeek(now, { weekStartsOn: 1 })
   const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
-  return sessions
+  return statsSessionsOnly(sessions)
     .filter((s) => {
       const d = parseISO(s.date)
       return isWithinInterval(d, { start: weekStart, end: weekEnd })

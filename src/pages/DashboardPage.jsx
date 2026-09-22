@@ -19,11 +19,13 @@ import {
   getAllExerciseNames,
   exerciseProgressSeries,
 } from '../lib/stats'
+import { statsSessionsOnly } from '../lib/sessionStatus'
 
 export function DashboardPage({ onOpenSettings }) {
   const { sessions, weightEntries, settings } = useFitness()
   const { t } = useLocale()
-  const exerciseNames = useMemo(() => getAllExerciseNames(sessions), [sessions])
+  const statsSessions = useMemo(() => statsSessionsOnly(sessions), [sessions])
+  const exerciseNames = useMemo(() => getAllExerciseNames(statsSessions), [statsSessions])
   const [selectedExercise, setSelectedExercise] = useState(exerciseNames[0] ?? '')
 
   useEffect(() => {
@@ -36,14 +38,14 @@ export function DashboardPage({ onOpenSettings }) {
     }
   }, [exerciseNames, selectedExercise])
 
-  const monthCount = sessionsThisMonth(sessions)
-  const weekVol = weekVolumeTotal(sessions)
+  const monthCount = sessionsThisMonth(statsSessions)
+  const weekVol = weekVolumeTotal(statsSessions)
 
-  const volumeData = weeklyVolume(sessions)
-  const muscleData = muscleDistribution(sessions)
+  const volumeData = weeklyVolume(statsSessions)
+  const muscleData = muscleDistribution(statsSessions)
   const exerciseData = useMemo(
-    () => exerciseProgressSeries(sessions, selectedExercise),
-    [sessions, selectedExercise],
+    () => exerciseProgressSeries(statsSessions, selectedExercise),
+    [statsSessions, selectedExercise],
   )
   const weightData = weightSeries(weightEntries, 90)
 
@@ -99,7 +101,7 @@ export function DashboardPage({ onOpenSettings }) {
             <h2 className="ft-section__title">{t('dashboard.forceGoals')}</h2>
           </div>
           {goalEntries.map(([name, target]) => {
-            const series = exerciseProgressSeries(sessions, name)
+            const series = exerciseProgressSeries(statsSessions, name)
             const max = series.length ? series[series.length - 1].weight : 0
             const pct = target ? Math.min(100, Math.round((max / target) * 100)) : 0
             return (

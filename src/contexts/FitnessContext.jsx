@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 import { DEFAULT_PALETTE, isValidPalette } from '../lib/palettes'
+import { SESSION_STATUS, sortSessionsByStatus, withSessionStatus } from '../lib/sessionStatus'
 
 export const STORAGE_KEY = 'fitness-v1'
 
@@ -33,8 +34,11 @@ function normalizeState(parsed) {
   if (!settings.exerciseGoals || typeof settings.exerciseGoals !== 'object') {
     settings.exerciseGoals = {}
   }
+  const sessions = Array.isArray(parsed.sessions)
+    ? parsed.sessions.map((s) => withSessionStatus(s))
+    : []
   return {
-    sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+    sessions,
     weightEntries: Array.isArray(parsed.weightEntries) ? parsed.weightEntries : [],
     settings,
   }
@@ -55,6 +59,7 @@ function cloneSessionPayload(session, dateOverride) {
     date: dateOverride ?? new Date().toISOString().slice(0, 10),
     muscles: [...(session.muscles ?? [])],
     notes: session.notes ?? '',
+    status: session.status ?? SESSION_STATUS.PAST,
     exercises: (session.exercises ?? []).map((ex) => ({
       name: ex.name,
       sets: (ex.sets ?? []).map((s) => ({
@@ -81,9 +86,14 @@ export function FitnessProvider({ children }) {
 
   const addSession = useCallback((session) => {
     const id = uid('session')
+    const next = withSessionStatus({
+      ...session,
+      status: session.status ?? SESSION_STATUS.PAST,
+      id,
+    })
     setState((prev) => ({
       ...prev,
-      sessions: [{ ...session, id }, ...prev.sessions],
+      sessions: [next, ...prev.sessions],
     }))
     return id
   }, [])
@@ -91,7 +101,9 @@ export function FitnessProvider({ children }) {
   const updateSession = useCallback((id, updates) => {
     setState((prev) => ({
       ...prev,
-      sessions: prev.sessions.map((s) => (s.id === id ? { ...s, ...updates } : s)),
+      sessions: prev.sessions.map((s) =>
+        s.id === id ? withSessionStatus({ ...s, ...updates }) : s,
+      ),
     }))
   }, [])
 
@@ -105,11 +117,16 @@ export function FitnessProvider({ children }) {
   const duplicateSession = useCallback((session) => {
     const payload = cloneSessionPayload(session)
     const id = uid('session')
+    const next = withSessionStatus({
+      ...payload,
+      status: SESSION_STATUS.PAST,
+      id,
+    })
     setState((prev) => ({
       ...prev,
-      sessions: [{ ...payload, id }, ...prev.sessions],
+      sessions: [next, ...prev.sessions],
     }))
-    return { id, session: { ...payload, id } }
+    return { id, session: next }
   }, [])
 
   const addWeightEntry = useCallback((entry) => {
@@ -177,7 +194,7 @@ export function FitnessProvider({ children }) {
   }, [])
 
   const sortedSessions = useMemo(
-    () => [...state.sessions].sort((a, b) => b.date.localeCompare(a.date)),
+    () => sortSessionsByStatus(state.sessions.map(withSessionStatus)),
     [state.sessions],
   )
 

@@ -6,10 +6,11 @@ import {
   subDays,
   differenceInCalendarDays,
 } from 'date-fns'
+import { statsSessionsOnly } from './sessionStatus'
 
-/** Unique ISO dates (yyyy-MM-dd) with at least one session */
+/** Unique ISO dates (yyyy-MM-dd) with at least one past or in-progress session */
 export function trainingDates(sessions) {
-  return [...new Set((sessions ?? []).map((s) => s.date).filter(Boolean))].sort()
+  return [...new Set(statsSessionsOnly(sessions).map((s) => s.date).filter(Boolean))].sort()
 }
 
 export function computeStreaks(sessions, today = new Date()) {

@@ -1,4 +1,6 @@
 import { useLocale } from '../contexts/LocaleContext'
+import { FaIcon } from './FaIcon'
+import { uiIcons } from '../lib/icons'
 
 /** Green (easy) → yellow → orange → red (max effort) */
 export const RPE_GRADIENT =
@@ -14,19 +16,21 @@ export function rpeColor(value) {
   return '#ef4444'
 }
 
-export function RpeGauge({ value, onChange }) {
+export function RpeGauge({ value, onChange, iconColor }) {
   const { t } = useLocale()
-  const numeric = value === '' || value == null ? null : Number(value)
-  const sliderValue = numeric != null && !Number.isNaN(numeric) ? numeric : 5
-  const display = numeric != null && !Number.isNaN(numeric) ? String(numeric) : '—'
-  const thumb = rpeColor(numeric ?? sliderValue)
+  const numeric = value === '' || value == null || Number.isNaN(Number(value)) ? 5 : Number(value)
+  const thumb = rpeColor(numeric)
+  const iconTint = iconColor ?? thumb
 
   return (
     <div className="ft-rpe">
       <div className="ft-rpe__head">
-        <span className="ft-rpe__label">{t('rpe.label')}</span>
+        <span className="ft-rpe__label">
+          <FaIcon icon={uiIcons.rpe} className="ft-rpe__icon" style={{ color: iconTint }} />
+          {t('rpe.label')}
+        </span>
         <span className="ft-rpe__value" style={{ color: thumb }}>
-          {display}
+          {numeric}
         </span>
       </div>
       <div className="ft-rpe__track" style={{ '--ft-rpe-thumb': thumb }}>
@@ -37,12 +41,12 @@ export function RpeGauge({ value, onChange }) {
           min={1}
           max={10}
           step={1}
-          value={sliderValue}
+          value={numeric}
           onChange={(e) => onChange(Number(e.target.value))}
           aria-label={t('rpe.label')}
           aria-valuemin={1}
           aria-valuemax={10}
-          aria-valuenow={sliderValue}
+          aria-valuenow={numeric}
         />
       </div>
       <div className="ft-rpe__ends" aria-hidden="true">

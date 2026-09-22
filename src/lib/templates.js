@@ -1,7 +1,7 @@
 import { EXERCISE_LIBRARY, exerciseLabel } from './exercises'
 
 function sets(n, reps = 10) {
-  return Array.from({ length: n }, () => ({ weight: 0, reps, rpe: '' }))
+  return Array.from({ length: n }, () => ({ weight: 0, reps, rpe: 5 }))
 }
 
 function ex(id, n = 3, reps = 10) {

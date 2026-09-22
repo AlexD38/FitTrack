@@ -1,6 +1,6 @@
 /** Default set: 0 kg = bodyweight allowed. */
 export function emptySet(overrides = {}) {
-  return { weight: 0, reps: '', rpe: '', ...overrides }
+  return { weight: 0, reps: '', rpe: 5, ...overrides }
 }
 
 /**
