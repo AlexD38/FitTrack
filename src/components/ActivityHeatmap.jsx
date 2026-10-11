@@ -3,7 +3,6 @@ import { format, parseISO } from 'date-fns'
 import { fr, enUS } from 'date-fns/locale'
 import { buildHeatmap, computeStreaks } from '../lib/streaks'
 import { useLocale } from '../contexts/LocaleContext'
-import { GlassCard } from './GlassCard'
 
 const WEEKDAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 const WEEKDAYS_EN = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
@@ -19,7 +18,6 @@ export function ActivityHeatmap({ sessions }) {
   const weeks = []
   let col = []
   for (const cell of cells) {
-    // startOfWeek Monday — first cells may need padding if we want strict columns
     col.push(cell)
     if (col.length === 7) {
       weeks.push(col)
@@ -35,18 +33,18 @@ export function ActivityHeatmap({ sessions }) {
       </div>
 
       <div className="ft-streak-kpis">
-        <GlassCard className="ft-streak-kpi">
+        <div className="ft-streak-kpi">
           <p className="ft-streak-kpi__value">{streaks.current}</p>
           <p className="ft-streak-kpi__label">{t('streaks.current')}</p>
-        </GlassCard>
-        <GlassCard className="ft-streak-kpi">
+        </div>
+        <div className="ft-streak-kpi">
           <p className="ft-streak-kpi__value">{streaks.best}</p>
           <p className="ft-streak-kpi__label">{t('streaks.best')}</p>
-        </GlassCard>
-        <GlassCard className="ft-streak-kpi">
+        </div>
+        <div className="ft-streak-kpi">
           <p className="ft-streak-kpi__value">{streaks.totalDays}</p>
           <p className="ft-streak-kpi__label">{t('streaks.total')}</p>
-        </GlassCard>
+        </div>
       </div>
 
       <div className="ft-heatmap">

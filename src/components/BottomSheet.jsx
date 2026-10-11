@@ -63,7 +63,7 @@ export function BottomSheet({ open, onClose, title, children, showBack = false }
               onClick={onClose}
               aria-label={t('common.close')}
             >
-              ✕
+              <FaIcon icon={uiIcons.close} className="ft-sheet__close-icon" />
             </button>
           )}
         </div>

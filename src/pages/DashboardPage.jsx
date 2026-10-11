@@ -3,13 +3,12 @@ import { PageHeader } from '../components/PageHeader'
 import { SettingsButton } from '../components/SettingsMenu'
 import { KpiCard } from '../components/KpiCard'
 import { EmptyState } from '../components/EmptyState'
-
-const ONBOARDING_KEY = 'ft-onboarding-seen'
 import { VolumeChart } from '../components/charts/VolumeChart'
 import { ExerciseProgressChart } from '../components/charts/ExerciseProgressChart'
 import { MuscleDistributionChart } from '../components/charts/MuscleDistributionChart'
 import { WeightTrendChart } from '../components/charts/WeightTrendChart'
 import { ActivityHeatmap } from '../components/ActivityHeatmap'
+import { TOUR_KEY } from '../components/OnboardingTour'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
 import {
@@ -23,6 +22,8 @@ import {
 } from '../lib/stats'
 import { statsSessionsOnly } from '../lib/sessionStatus'
 
+const ONBOARDING_KEY = 'ft-onboarding-seen'
+
 export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
   const { sessions, weightEntries, settings } = useFitness()
   const { t } = useLocale()
@@ -31,6 +32,8 @@ export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
   const [selectedExercise, setSelectedExercise] = useState(exerciseNames[0] ?? '')
   const [showOnboarding, setShowOnboarding] = useState(() => {
     try {
+      // Skip tip banner if the 3-screen tour already covered first-run guidance
+      if (localStorage.getItem(TOUR_KEY) === '1') return false
       return localStorage.getItem(ONBOARDING_KEY) !== '1'
     } catch {
       return true

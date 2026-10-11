@@ -87,7 +87,9 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
         >
           <button
             type="button"
-            className="ft-btn ft-btn--primary ft-session-card__cta"
+            className={`ft-btn ft-session-card__cta${
+              pinned ? ' ft-btn--primary' : ' ft-btn--secondary'
+            }`}
             onClick={() => onReplay(session)}
           >
             <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />

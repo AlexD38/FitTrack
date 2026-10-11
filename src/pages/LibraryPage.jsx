@@ -3,6 +3,7 @@ import { PageHeader } from '../components/PageHeader'
 import { SettingsButton } from '../components/SettingsMenu'
 import { BodyMuscleMap } from '../components/BodyMuscleMap'
 import { ExerciseThumb } from '../components/ExerciseThumb'
+import { EmptyState } from '../components/EmptyState'
 import { EXERCISE_LIBRARY, exerciseLabel } from '../lib/exercises'
 import { MUSCLE_GROUPS, getMuscleColor } from '../lib/muscles'
 import { muscleLabel } from '../lib/i18n'
@@ -127,11 +128,7 @@ export function LibraryPage({ onOpenSettings }) {
         })}
       </ul>
 
-      {exercises.length === 0 && (
-        <p className="ft-empty" style={{ marginTop: 'var(--space-4)' }}>
-          {t('library.empty')}
-        </p>
-      )}
+      {exercises.length === 0 && <EmptyState message={t('library.empty')} />}
     </>
   )
 }
