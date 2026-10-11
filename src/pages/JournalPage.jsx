@@ -26,10 +26,18 @@ import { musclesFromExerciseNames } from '../lib/exercises'
 import { formatDuration } from '../lib/duration'
 import { uiIcons } from '../lib/icons'
 
-const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
+const FAVORITES_FILTER = 'favorites'
+const FILTERS = [
+  'all',
+  FAVORITES_FILTER,
+  SESSION_STATUS.ACTIVE,
+  SESSION_STATUS.UPCOMING,
+  SESSION_STATUS.PAST,
+]
 
 export function JournalPage({ onOpenSettings }) {
-  const { sessions, addSession, updateSession, deleteSession, cloneSessionPayload } = useFitness()
+  const { sessions, addSession, updateSession, deleteSession, toggleFavorite, cloneSessionPayload } =
+    useFitness()
   const { t } = useLocale()
   const listRef = useRef(null)
 
@@ -50,11 +58,18 @@ export function JournalPage({ onOpenSettings }) {
 
   const filteredSessions = useMemo(() => {
     if (statusFilter === 'all') return sessions.filter((s) => !isActiveSession(s))
+    if (statusFilter === FAVORITES_FILTER) return sessions.filter((s) => s.favorite)
     if (statusFilter === SESSION_STATUS.ACTIVE) return []
     return sessions.filter((s) => resolveSessionStatus(s) === statusFilter)
   }, [sessions, statusFilter])
 
+  const favoriteSessions = useMemo(
+    () => sessions.filter((s) => s.favorite && !isActiveSession(s)),
+    [sessions],
+  )
+
   const listEmpty = pinnedActive.length === 0 && filteredSessions.length === 0
+  const handleToggleFavorite = (session) => toggleFavorite(session.id)
 
   const liveSession = useMemo(
     () => (liveId ? sessions.find((s) => s.id === liveId) : null),
@@ -203,7 +218,13 @@ export function JournalPage({ onOpenSettings }) {
       <div className="ft-journal-filters" role="tablist" aria-label={t('journal.filterStatus')}>
         {FILTERS.map((key) => {
           const active = statusFilter === key
-          const label = key === 'all' ? t('common.all') : t(`journal.status.${key}`)
+          const isFav = key === FAVORITES_FILTER
+          const label =
+            key === 'all'
+              ? t('common.all')
+              : isFav
+                ? t('journal.favorites')
+                : t(`journal.status.${key}`)
           return (
             <button
               key={key}
@@ -215,6 +236,7 @@ export function JournalPage({ onOpenSettings }) {
               }`}
               onClick={() => setStatusFilter(key)}
             >
+              {isFav && <FaIcon icon={uiIcons.star} className="ft-fav-chip__icon" />}
               {label}
             </button>
           )
@@ -223,7 +245,11 @@ export function JournalPage({ onOpenSettings }) {
 
       <div ref={listRef} className="ft-journal-list">
         {listEmpty ? (
-          <EmptyState message={t('journal.empty')} />
+          <EmptyState
+            message={
+              statusFilter === FAVORITES_FILTER ? t('journal.favoritesEmpty') : t('journal.empty')
+            }
+          />
         ) : (
           <>
             {pinnedActive.map((s) => (
@@ -234,6 +260,7 @@ export function JournalPage({ onOpenSettings }) {
                 onOpen={openDetail}
                 onReplay={handlePrimaryAction}
                 onDelete={handleDeleteFromList}
+                onToggleFavorite={handleToggleFavorite}
                 primaryLabel={primaryLabel(s)}
               />
             ))}
@@ -244,6 +271,7 @@ export function JournalPage({ onOpenSettings }) {
                 onOpen={openDetail}
                 onReplay={handlePrimaryAction}
                 onDelete={handleDeleteFromList}
+                onToggleFavorite={handleToggleFavorite}
                 primaryLabel={primaryLabel(s)}
               />
             ))}
@@ -286,6 +314,7 @@ export function JournalPage({ onOpenSettings }) {
           onSelect={handlePickerTemplate}
           onSelectPast={handlePickerPast}
           pastSessions={pastSessionsOnly(sessions)}
+          favoriteSessions={favoriteSessions}
         />
       </BottomSheet>
 
@@ -305,14 +334,29 @@ export function JournalPage({ onOpenSettings }) {
                   className="ft-session-detail__map"
                 />
               )}
-              <button
-                type="button"
-                className="ft-btn ft-btn--primary ft-session-detail__cta"
-                onClick={() => handlePrimaryAction(detailSession)}
-              >
-                <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
-                {primaryLabel(detailSession)}
-              </button>
+              <div className="ft-session-detail__actions">
+                <button
+                  type="button"
+                  className="ft-btn ft-btn--primary ft-session-detail__cta"
+                  onClick={() => handlePrimaryAction(detailSession)}
+                >
+                  <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
+                  {primaryLabel(detailSession)}
+                </button>
+                <button
+                  type="button"
+                  className={`ft-btn ft-btn--secondary ft-session-detail__fav ft-fav-btn${
+                    detailSession.favorite ? ' ft-fav-btn--on' : ''
+                  }`}
+                  onClick={() => toggleFavorite(detailSession.id)}
+                  aria-pressed={Boolean(detailSession.favorite)}
+                  aria-label={
+                    detailSession.favorite ? t('journal.removeFavorite') : t('journal.addFavorite')
+                  }
+                >
+                  <FaIcon icon={uiIcons.star} className="ft-session-card__action-icon" />
+                </button>
+              </div>
             </div>
 
             <label className="ft-field">

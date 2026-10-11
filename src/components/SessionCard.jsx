@@ -11,7 +11,15 @@ import { formatDuration } from '../lib/duration'
 
 const MAX_MUSCLE_CHIPS = 3
 
-export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelete, primaryLabel }) {
+export function SessionCard({
+  session,
+  pinned = false,
+  onOpen,
+  onReplay,
+  onDelete,
+  onToggleFavorite,
+  primaryLabel,
+}) {
   const { locale, t } = useLocale()
   const dateLocale = locale === 'fr' ? fr : enUS
   const dateStr = format(parseISO(session.date), 'EEE d MMM', { locale: dateLocale })
@@ -64,6 +72,20 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
             </div>
           )}
         </div>
+        {onToggleFavorite && (
+          <button
+            type="button"
+            className={`ft-session-card__icon-btn ft-fav-btn${session.favorite ? ' ft-fav-btn--on' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onToggleFavorite(session)
+            }}
+            aria-pressed={Boolean(session.favorite)}
+            aria-label={session.favorite ? t('journal.removeFavorite') : t('journal.addFavorite')}
+          >
+            <FaIcon icon={uiIcons.star} className="ft-session-card__icon-btn-icon" />
+          </button>
+        )}
         {onDelete && (
           <button
             type="button"

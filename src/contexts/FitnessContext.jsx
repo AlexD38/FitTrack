@@ -116,6 +116,13 @@ export function FitnessProvider({ children }) {
     }))
   }, [])
 
+  const toggleFavorite = useCallback((id) => {
+    setState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.map((s) => (s.id === id ? { ...s, favorite: !s.favorite } : s)),
+    }))
+  }, [])
+
   const duplicateSession = useCallback((session) => {
     const payload = cloneSessionPayload(session)
     const id = uid('session')
@@ -213,6 +220,7 @@ export function FitnessProvider({ children }) {
       addSession,
       updateSession,
       deleteSession,
+      toggleFavorite,
       duplicateSession,
       cloneSessionPayload,
       addWeightEntry,
@@ -229,6 +237,7 @@ export function FitnessProvider({ children }) {
       addSession,
       updateSession,
       deleteSession,
+      toggleFavorite,
       duplicateSession,
       addWeightEntry,
       deleteWeightEntry,
