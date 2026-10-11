@@ -3,6 +3,8 @@ import { PageHeader } from '../components/PageHeader'
 import { SettingsButton } from '../components/SettingsMenu'
 import { KpiCard } from '../components/KpiCard'
 import { EmptyState } from '../components/EmptyState'
+
+const ONBOARDING_KEY = 'ft-onboarding-seen'
 import { VolumeChart } from '../components/charts/VolumeChart'
 import { ExerciseProgressChart } from '../components/charts/ExerciseProgressChart'
 import { MuscleDistributionChart } from '../components/charts/MuscleDistributionChart'
@@ -27,6 +29,13 @@ export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
   const statsSessions = useMemo(() => statsSessionsOnly(sessions), [sessions])
   const exerciseNames = useMemo(() => getAllExerciseNames(statsSessions), [statsSessions])
   const [selectedExercise, setSelectedExercise] = useState(exerciseNames[0] ?? '')
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    try {
+      return localStorage.getItem(ONBOARDING_KEY) !== '1'
+    } catch {
+      return true
+    }
+  })
   const isFresh = statsSessions.length === 0
 
   useEffect(() => {
@@ -38,6 +47,15 @@ export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
       setSelectedExercise(exerciseNames[0])
     }
   }, [exerciseNames, selectedExercise])
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false)
+    try {
+      localStorage.setItem(ONBOARDING_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+  }
 
   const monthCount = sessionsThisMonth(statsSessions)
   const weekVol = weekVolumeTotal(statsSessions)
@@ -55,6 +73,18 @@ export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
   return (
     <>
       <PageHeader title={t('dashboard.title')} actions={<SettingsButton onClick={onOpenSettings} />} />
+
+      {showOnboarding && !isFresh && (
+        <div className="ft-onboarding" role="note">
+          <div className="ft-onboarding__text">
+            <p className="ft-onboarding__title">{t('dashboard.onboardingTitle')}</p>
+            <p className="ft-onboarding__body">{t('dashboard.onboardingBody')}</p>
+          </div>
+          <button type="button" className="ft-btn ft-btn--secondary ft-onboarding__dismiss" onClick={dismissOnboarding}>
+            {t('common.gotIt')}
+          </button>
+        </div>
+      )}
 
       {isFresh ? (
         <section className="ft-section ft-glass ft-glass--pad ft-dashboard-hero">

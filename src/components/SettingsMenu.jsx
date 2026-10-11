@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { BottomSheet } from './BottomSheet'
 import { Chip } from './Chip'
 import { FaIcon } from './FaIcon'
@@ -7,12 +7,58 @@ import { useLocale } from '../contexts/LocaleContext'
 import { useTheme } from '../contexts/ThemeContext'
 import { uiIcons } from '../lib/icons'
 
+const REST_OPTIONS = [60, 90, 105, 120, 150]
+
 export function SettingsMenu({ open, onClose }) {
   const { settings, updateSettings, exportData, importData } = useFitness()
   const { t, locale, setLocale } = useLocale()
   const { theme, palette, setTheme, setPalette, palettes } = useTheme()
   const fileRef = useRef(null)
   const [dataMsg, setDataMsg] = useState('')
+  const [undo, setUndo] = useState(null)
+  const undoTimer = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (undoTimer.current) clearTimeout(undoTimer.current)
+    }
+  }, [])
+
+  const flashUndo = (payload) => {
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+    setUndo(payload)
+    undoTimer.current = setTimeout(() => setUndo(null), 4000)
+  }
+
+  const handleTheme = (next) => {
+    if (next === theme) return
+    const prev = theme
+    setTheme(next)
+    flashUndo({
+      kind: 'theme',
+      prev,
+      label: t('settings.themeChanged'),
+    })
+  }
+
+  const handlePalette = (next) => {
+    if (next === palette) return
+    const prev = palette
+    setPalette(next)
+    flashUndo({
+      kind: 'palette',
+      prev,
+      label: t('settings.paletteChanged'),
+    })
+  }
+
+  const handleUndo = () => {
+    if (!undo) return
+    if (undo.kind === 'theme') setTheme(undo.prev)
+    if (undo.kind === 'palette') setPalette(undo.prev)
+    setUndo(null)
+    if (undoTimer.current) clearTimeout(undoTimer.current)
+  }
 
   const handleExport = () => {
     const json = exportData()
@@ -46,12 +92,12 @@ export function SettingsMenu({ open, onClose }) {
       <div className="ft-settings">
         <div className="ft-settings__group">
           <p className="ft-settings__label">{t('common.language')}</p>
-          <div className="ft-settings__options">
+          <div className="ft-settings__options ft-settings__options--lg">
             <Chip active={locale === 'fr'} onClick={() => setLocale('fr')}>
-              FR
+              Français
             </Chip>
             <Chip active={locale === 'en'} onClick={() => setLocale('en')}>
-              EN
+              English
             </Chip>
           </div>
         </div>
@@ -62,7 +108,7 @@ export function SettingsMenu({ open, onClose }) {
             <button
               type="button"
               className={`ft-theme-toggle__btn${theme === 'dark' ? ' ft-theme-toggle__btn--active' : ''}`}
-              onClick={() => setTheme('dark')}
+              onClick={() => handleTheme('dark')}
               aria-pressed={theme === 'dark'}
             >
               <FaIcon icon={uiIcons.moon} className="ft-theme-toggle__icon" />
@@ -71,7 +117,7 @@ export function SettingsMenu({ open, onClose }) {
             <button
               type="button"
               className={`ft-theme-toggle__btn${theme === 'light' ? ' ft-theme-toggle__btn--active' : ''}`}
-              onClick={() => setTheme('light')}
+              onClick={() => handleTheme('light')}
               aria-pressed={theme === 'light'}
             >
               <FaIcon icon={uiIcons.sun} className="ft-theme-toggle__icon" />
@@ -91,7 +137,7 @@ export function SettingsMenu({ open, onClose }) {
                   key={p.id}
                   type="button"
                   className={`ft-palette-card${active ? ' ft-palette-card--active' : ''}`}
-                  onClick={() => setPalette(p.id)}
+                  onClick={() => handlePalette(p.id)}
                   aria-pressed={active}
                 >
                   <span
@@ -113,9 +159,18 @@ export function SettingsMenu({ open, onClose }) {
           </div>
         </div>
 
+        {undo && (
+          <div className="ft-settings__undo" role="status">
+            <span>{undo.label}</span>
+            <button type="button" className="ft-btn ft-btn--secondary ft-settings__undo-btn" onClick={handleUndo}>
+              {t('common.undo')}
+            </button>
+          </div>
+        )}
+
         <div className="ft-settings__group">
           <p className="ft-settings__label">{t('common.weightUnit')}</p>
-          <div className="ft-settings__options">
+          <div className="ft-settings__options ft-settings__options--lg">
             <Chip
               active={settings.weightUnit === 'kg'}
               onClick={() => updateSettings({ weightUnit: 'kg' })}
@@ -133,14 +188,15 @@ export function SettingsMenu({ open, onClose }) {
 
         <div className="ft-settings__group">
           <p className="ft-settings__label">{t('common.defaultRest')}</p>
-          <div className="ft-settings__options">
-            {[60, 90, 120, 150].map((s) => (
+          <p className="ft-settings__hint">{t('settings.defaultRestHint')}</p>
+          <div className="ft-settings__options ft-settings__options--wrap">
+            {REST_OPTIONS.map((s) => (
               <Chip
                 key={s}
                 active={settings.defaultRestSeconds === s}
                 onClick={() => updateSettings({ defaultRestSeconds: s })}
               >
-                {s}s
+                {s < 60 ? `${s}s` : `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`}
               </Chip>
             ))}
           </div>

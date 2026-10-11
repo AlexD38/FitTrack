@@ -66,6 +66,27 @@ export function getAllExerciseNames(sessions) {
   return [...names].sort()
 }
 
+/** Most recently used exercise names (newest sessions first), unique, capped. */
+export function getRecentExerciseNames(sessions, limit = 5) {
+  const seen = new Set()
+  const recent = []
+  const ordered = [...statsSessionsOnly(sessions)].sort((a, b) =>
+    (b.date ?? '').localeCompare(a.date ?? ''),
+  )
+  for (const s of ordered) {
+    for (const ex of s.exercises ?? []) {
+      const name = ex.name?.trim()
+      if (!name) continue
+      const key = name.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      recent.push(name)
+      if (recent.length >= limit) return recent
+    }
+  }
+  return recent
+}
+
 /**
  * Weight progression for one exercise across sessions.
  * Only sessions that actually include this exercise with a loaded set (weight > 0)

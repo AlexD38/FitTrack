@@ -80,10 +80,15 @@ export function ActivityHeatmap({ sessions }) {
       <div className="ft-heatmap__legend">
         <span>{t('streaks.less')}</span>
         {[0, 1, 2, 3].map((l) => (
-          <span key={l} className={`ft-heatmap__cell ft-heatmap__cell--l${l}`} />
+          <span
+            key={l}
+            className={`ft-heatmap__cell ft-heatmap__cell--l${l}`}
+            title={t(`streaks.level${l}`)}
+          />
         ))}
         <span>{t('streaks.more')}</span>
       </div>
+      <p className="ft-heatmap__legend-hint">{t('streaks.legendHint')}</p>
     </section>
   )
 }

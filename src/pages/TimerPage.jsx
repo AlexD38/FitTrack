@@ -9,6 +9,7 @@ import { useLocale } from '../contexts/LocaleContext'
 const PRESETS = [
   { seconds: 60, labelKey: 'timer.preset1' },
   { seconds: 90, labelKey: 'timer.preset2' },
+  { seconds: 105, labelKey: 'timer.preset145' },
   { seconds: 120, labelKey: 'timer.preset3' },
   { seconds: 150, labelKey: 'timer.preset4' },
 ]

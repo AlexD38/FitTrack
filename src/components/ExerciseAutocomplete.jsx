@@ -4,7 +4,7 @@ import { MUSCLE_GROUPS } from '../lib/muscles'
 import { muscleLabel } from '../lib/i18n'
 import { useLocale } from '../contexts/LocaleContext'
 import { useFitness } from '../contexts/FitnessContext'
-import { getAllExerciseNames } from '../lib/stats'
+import { getAllExerciseNames, getRecentExerciseNames } from '../lib/stats'
 import { BottomSheet } from './BottomSheet'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
@@ -16,6 +16,7 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const [muscleFilter, setMuscleFilter] = useState(null)
 
   const history = useMemo(() => getAllExerciseNames(sessions), [sessions])
+  const recent = useMemo(() => getRecentExerciseNames(sessions, 5), [sessions])
 
   const options = useMemo(() => {
     const fromLib = EXERCISE_LIBRARY.map((ex) => ({
@@ -33,8 +34,11 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const filtered = useMemo(() => {
     if (!muscleFilter) return options
     if (muscleFilter === 'history') return options.filter((o) => o.source === 'history')
+    if (muscleFilter === 'recent') {
+      return recent.map((name) => ({ name, muscle: null, source: 'recent' }))
+    }
     return options.filter((o) => o.muscle === muscleFilter)
-  }, [options, muscleFilter])
+  }, [options, muscleFilter, recent])
 
   useEffect(() => {
     if (!open) setMuscleFilter(null)
@@ -44,6 +48,8 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
     onChange(name)
     setOpen(false)
   }
+
+  const showRecentBlock = muscleFilter == null && recent.length > 0
 
   return (
     <div className="ft-exercise-picker">
@@ -80,6 +86,15 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
           >
             {t('common.all')}
           </button>
+          {recent.length > 0 && (
+            <button
+              type="button"
+              className={`ft-chip${muscleFilter === 'recent' ? ' ft-chip--active' : ''}`}
+              onClick={() => setMuscleFilter('recent')}
+            >
+              {t('journal.recentExercises')}
+            </button>
+          )}
           {history.length > 0 && (
             <button
               type="button"
@@ -103,6 +118,31 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
             </button>
           ))}
         </div>
+
+        {showRecentBlock && (
+          <div className="ft-exercise-picker__recent">
+            <p className="ft-exercise-picker__section-title">{t('journal.recentExercises')}</p>
+            <ul className="ft-exercise-picker__list ft-exercise-picker__list--compact" role="listbox">
+              {recent.map((name) => (
+                <li key={`recent-${name}`}>
+                  <button
+                    type="button"
+                    className={`ft-exercise-picker__item${value === name ? ' ft-exercise-picker__item--selected' : ''}`}
+                    onClick={() => pick(name)}
+                    role="option"
+                    aria-selected={value === name}
+                  >
+                    <span>{name}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {muscleFilter == null && (
+          <p className="ft-exercise-picker__section-title">{t('library.title')}</p>
+        )}
 
         <ul className="ft-exercise-picker__list" role="listbox">
           {filtered.map((s) => (

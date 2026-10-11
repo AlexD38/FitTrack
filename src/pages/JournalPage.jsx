@@ -288,22 +288,23 @@ export function JournalPage({ onOpenSettings }) {
       >
         {detailSession && (
           <div className="ft-session-detail">
-            <button
-              type="button"
-              className="ft-btn ft-btn--primary ft-session-detail__cta"
-              onClick={() => handlePrimaryAction(detailSession)}
-            >
-              <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
-              {primaryLabel(detailSession)}
-            </button>
-
-            {(detailSession.muscles?.length ?? 0) > 0 && (
-              <BodyMuscleMap
-                active={detailSession.muscles}
-                size="md"
-                className="ft-session-detail__map"
-              />
-            )}
+            <div className="ft-session-detail__sticky">
+              {(detailSession.muscles?.length ?? 0) > 0 && (
+                <BodyMuscleMap
+                  active={detailSession.muscles}
+                  size="sm"
+                  className="ft-session-detail__map"
+                />
+              )}
+              <button
+                type="button"
+                className="ft-btn ft-btn--primary ft-session-detail__cta"
+                onClick={() => handlePrimaryAction(detailSession)}
+              >
+                <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
+                {primaryLabel(detailSession)}
+              </button>
+            </div>
 
             <label className="ft-field">
               <span className="ft-field__label">{t('journal.date')}</span>
@@ -319,7 +320,7 @@ export function JournalPage({ onOpenSettings }) {
               <span className="ft-field__label">{t('journal.notes')}</span>
               <textarea
                 className="ft-input"
-                rows={2}
+                rows={3}
                 value={detailSession.notes ?? ''}
                 onChange={(e) => patchDetailSession({ notes: e.target.value })}
                 placeholder={t('journal.notes')}
