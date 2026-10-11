@@ -6,18 +6,20 @@ import { getMuscleColor } from '../lib/muscles'
 import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
-import { BodyMuscleMap } from './BodyMuscleMap'
 import { normalizeSessionStatus, statusTagKey } from '../lib/sessionStatus'
+
+const MAX_MUSCLE_CHIPS = 3
 
 export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelete, primaryLabel }) {
   const { locale, t } = useLocale()
   const dateLocale = locale === 'fr' ? fr : enUS
-  const dateStr = format(parseISO(session.date), 'EEEE d MMMM yyyy', { locale: dateLocale })
+  const dateStr = format(parseISO(session.date), 'EEE d MMM', { locale: dateLocale })
   const vol = sessionVolume(session)
   const exCount = session.exercises?.length ?? 0
   const muscles = session.muscles ?? []
   const status = normalizeSessionStatus(session.status)
-  const showBar = onReplay || onDelete
+  const visibleMuscles = muscles.slice(0, MAX_MUSCLE_CHIPS)
+  const extraMuscles = Math.max(0, muscles.length - MAX_MUSCLE_CHIPS)
 
   return (
     <article
@@ -34,66 +36,61 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
         }
       }}
     >
-      <div className="ft-session-card__summary">
-        <div className="ft-session-card__summary-main">
-          <p className="ft-session-card__date">{dateStr}</p>
-          <div className="ft-session-card__meta">
-            <span>
-              {exCount} {t('common.exercises')}
-            </span>
-            <span>
-              {t('common.volume')}: {vol.toLocaleString()} kg
-            </span>
+      <div className="ft-session-card__row">
+        <div className="ft-session-card__main">
+          <div className="ft-session-card__title-row">
+            <p className="ft-session-card__date">{dateStr}</p>
+            <span className={`ft-status-tag ft-status-tag--${status}`}>{t(statusTagKey(status))}</span>
           </div>
-          {muscles.length > 0 && (
+          <p className="ft-session-card__meta">
+            {exCount} {t('common.exercises')} · {vol.toLocaleString()} {t('common.kg')}
+          </p>
+          {visibleMuscles.length > 0 && (
             <div className="ft-session-card__chips">
-              {muscles.map((m) => (
+              {visibleMuscles.map((m) => (
                 <span
                   key={m}
-                  className="ft-chip"
+                  className="ft-chip ft-chip--sm"
                   style={{ borderColor: getMuscleColor(m), color: getMuscleColor(m) }}
                 >
                   {muscleLabel(locale, m)}
                 </span>
               ))}
+              {extraMuscles > 0 && (
+                <span className="ft-chip ft-chip--sm ft-session-card__more">+{extraMuscles}</span>
+              )}
             </div>
           )}
         </div>
-        <span className={`ft-status-tag ft-status-tag--${status}`}>{t(statusTagKey(status))}</span>
+        {onDelete && (
+          <button
+            type="button"
+            className="ft-session-card__icon-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(session)
+            }}
+            aria-label={t('common.delete')}
+          >
+            <FaIcon icon={uiIcons.trash} className="ft-session-card__icon-btn-icon" />
+          </button>
+        )}
       </div>
 
-      {muscles.length > 0 && (
-        <BodyMuscleMap active={muscles} size="sm" className="ft-session-card__body" />
-      )}
-
-      {showBar && (
+      {onReplay && (
         <div
-          className={`ft-session-card__bar${onReplay && onDelete ? '' : ' ft-session-card__bar--single'}`}
-          role="group"
-          aria-label={t('journal.sessionDetail')}
+          className="ft-session-card__cta-wrap"
           onClick={(e) => e.stopPropagation()}
           onKeyDown={(e) => e.stopPropagation()}
         >
-          {onReplay && (
-            <button
-              type="button"
-              className="ft-session-card__action ft-session-card__action--play"
-              onClick={() => onReplay(session)}
-            >
-              <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
-              <span>{primaryLabel ?? t('live.replay')}</span>
-            </button>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              className="ft-session-card__action ft-session-card__action--delete"
-              onClick={() => onDelete(session)}
-            >
-              <FaIcon icon={uiIcons.trash} className="ft-session-card__action-icon" />
-              <span>{t('common.delete')}</span>
-            </button>
-          )}
+          <button
+            type="button"
+            className="ft-btn ft-btn--primary ft-session-card__cta"
+            onClick={() => onReplay(session)}
+          >
+            <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
+            <span>{primaryLabel ?? t('live.replay')}</span>
+          </button>
         </div>
       )}
     </article>

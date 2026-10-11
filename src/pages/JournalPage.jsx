@@ -7,6 +7,8 @@ import { BottomSheet } from '../components/BottomSheet'
 import { LiveWorkout } from '../components/LiveWorkout'
 import { TemplatePicker } from '../components/TemplatePicker'
 import { ExerciseListEditor } from '../components/ExerciseEditor'
+import { BodyMuscleMap } from '../components/BodyMuscleMap'
+import { Fab } from '../components/Fab'
 import { FaIcon } from '../components/FaIcon'
 import { staggerListItems } from '../lib/pageTransition'
 import { useFitness } from '../contexts/FitnessContext'
@@ -78,13 +80,8 @@ export function JournalPage({ onOpenSettings }) {
     [detailSession, updateSession],
   )
 
-  const openStartPicker = () => {
+  const openNewSessionPicker = () => {
     setPickerIntent('start')
-    setPickerOpen(true)
-  }
-
-  const openPlanPicker = () => {
-    setPickerIntent('plan')
     setPickerOpen(true)
   }
 
@@ -118,7 +115,6 @@ export function JournalPage({ onOpenSettings }) {
         openLiveById(active.id)
         return
       }
-      // Explicit Relancer / start from a card: archive any other #encours first.
       if (active && replaceActive && active.id !== existingId) {
         updateSession(active.id, { status: SESSION_STATUS.PAST })
       }
@@ -139,6 +135,7 @@ export function JournalPage({ onOpenSettings }) {
       openLiveById(session.id)
       return
     }
+    closeSheet()
     startOrResumeLive(
       {
         ...cloneSessionPayload(session, todayIsoDate()),
@@ -194,15 +191,6 @@ export function JournalPage({ onOpenSettings }) {
     <>
       <PageHeader title={t('journal.title')} actions={<SettingsButton onClick={onOpenSettings} />} />
 
-      <div className="ft-journal-actions">
-        <button type="button" className="ft-btn ft-btn--primary" onClick={openStartPicker}>
-          {t('live.startBlank')}
-        </button>
-        <button type="button" className="ft-btn ft-btn--secondary" onClick={openPlanPicker}>
-          {t('journal.planSession')}
-        </button>
-      </div>
-
       <div className="ft-journal-filters" role="tablist" aria-label={t('journal.filterStatus')}>
         {FILTERS.map((key) => {
           const active = statusFilter === key
@@ -224,7 +212,7 @@ export function JournalPage({ onOpenSettings }) {
         })}
       </div>
 
-      <div ref={listRef}>
+      <div ref={listRef} className="ft-journal-list">
         {listEmpty ? (
           <EmptyState message={t('journal.empty')} />
         ) : (
@@ -254,14 +242,35 @@ export function JournalPage({ onOpenSettings }) {
         )}
       </div>
 
+      <Fab onClick={openNewSessionPicker} label={t('journal.newSession')} />
+
       <BottomSheet
         open={pickerOpen}
         onClose={closePicker}
-        title={pickerIntent === 'plan' ? t('journal.planSession') : t('templates.choose')}
+        title={t('journal.newSession')}
       >
-        <p className="ft-templates__hint">
-          {pickerIntent === 'plan' ? t('templates.planHint') : t('templates.startHint')}
-        </p>
+        <div className="ft-journal-intent" role="group" aria-label={t('journal.newSession')}>
+          <button
+            type="button"
+            className={`ft-journal-intent__btn${
+              pickerIntent === 'start' ? ' ft-journal-intent__btn--primary' : ''
+            }`}
+            onClick={() => setPickerIntent('start')}
+          >
+            <span className="ft-journal-intent__title">{t('live.start')}</span>
+            <span className="ft-journal-intent__hint">{t('templates.startHint')}</span>
+          </button>
+          <button
+            type="button"
+            className={`ft-journal-intent__btn${
+              pickerIntent === 'plan' ? ' ft-journal-intent__btn--primary' : ''
+            }`}
+            onClick={() => setPickerIntent('plan')}
+          >
+            <span className="ft-journal-intent__title">{t('journal.planSession')}</span>
+            <span className="ft-journal-intent__hint">{t('templates.planHint')}</span>
+          </button>
+        </div>
         <TemplatePicker
           hideHeader
           onCustom={handlePickerCustom}
@@ -279,6 +288,23 @@ export function JournalPage({ onOpenSettings }) {
       >
         {detailSession && (
           <div className="ft-session-detail">
+            <button
+              type="button"
+              className="ft-btn ft-btn--primary ft-session-detail__cta"
+              onClick={() => handlePrimaryAction(detailSession)}
+            >
+              <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
+              {primaryLabel(detailSession)}
+            </button>
+
+            {(detailSession.muscles?.length ?? 0) > 0 && (
+              <BodyMuscleMap
+                active={detailSession.muscles}
+                size="md"
+                className="ft-session-detail__map"
+              />
+            )}
+
             <label className="ft-field">
               <span className="ft-field__label">{t('journal.date')}</span>
               <input

@@ -70,6 +70,7 @@ const STRINGS = {
     journal: {
       title: 'Séances',
       newSession: 'Nouvelle séance',
+      newSessionHint: 'Démarrer maintenant ou programmer plus tard.',
       editSession: 'Modifier la séance',
       editExercise: 'Modifier l\'exercice',
       sessionDetail: 'Détail séance',
@@ -287,6 +288,7 @@ const STRINGS = {
     journal: {
       title: 'Workouts',
       newSession: 'New session',
+      newSessionHint: 'Start now or schedule for later.',
       editSession: 'Edit session',
       editExercise: 'Edit exercise',
       sessionDetail: 'Session detail',

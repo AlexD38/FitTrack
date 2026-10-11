@@ -16,9 +16,51 @@ export function rpeColor(value) {
   return '#ef4444'
 }
 
+function clampRpe(value) {
+  const n = value === '' || value == null || Number.isNaN(Number(value)) ? 5 : Number(value)
+  return Math.min(10, Math.max(1, n))
+}
+
+/** Compact RPE control for inline set rows: − / value / +. */
+export function RpeCompact({ value, onChange, ariaLabel }) {
+  const { t } = useLocale()
+  const numeric = clampRpe(value)
+  const tint = rpeColor(numeric)
+
+  return (
+    <div className="ft-rpe-compact" style={{ '--ft-rpe-thumb': tint }}>
+      <button
+        type="button"
+        className="ft-rpe-compact__btn"
+        onClick={() => onChange(Math.max(1, numeric - 1))}
+        disabled={numeric <= 1}
+        aria-label={`${ariaLabel ?? t('rpe.label')} −`}
+      >
+        <FaIcon icon={uiIcons.minus} className="ft-rpe-compact__icon" />
+      </button>
+      <span
+        className="ft-rpe-compact__value"
+        style={{ color: tint, background: `${tint}22` }}
+        aria-live="polite"
+      >
+        {numeric}
+      </span>
+      <button
+        type="button"
+        className="ft-rpe-compact__btn"
+        onClick={() => onChange(Math.min(10, numeric + 1))}
+        disabled={numeric >= 10}
+        aria-label={`${ariaLabel ?? t('rpe.label')} +`}
+      >
+        <FaIcon icon={uiIcons.add} className="ft-rpe-compact__icon" />
+      </button>
+    </div>
+  )
+}
+
 export function RpeGauge({ value, onChange, iconColor }) {
   const { t } = useLocale()
-  const numeric = value === '' || value == null || Number.isNaN(Number(value)) ? 5 : Number(value)
+  const numeric = clampRpe(value)
   const thumb = rpeColor(numeric)
   const iconTint = iconColor ?? thumb
   const pct = ((numeric - 1) / 9) * 100
