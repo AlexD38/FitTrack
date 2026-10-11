@@ -15,6 +15,7 @@ import {
   faPlay,
   faPlus,
   faFire,
+  faStar,
   faStopwatch,
   faSun,
   faTrash,
@@ -55,4 +56,5 @@ export const uiIcons = {
   arrowDown: faArrowDown,
   volumeOn: faVolumeHigh,
   volumeOff: faVolumeXmark,
+  star: faStar,
 }
