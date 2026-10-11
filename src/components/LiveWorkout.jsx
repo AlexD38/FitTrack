@@ -7,6 +7,7 @@ import { FaIcon } from './FaIcon'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { normalizeSetsForSave } from '../lib/sets'
 import { SESSION_STATUS } from '../lib/sessionStatus'
+import { durationBetween, formatDuration } from '../lib/duration'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
 import { uiIcons } from '../lib/icons'
 
@@ -17,6 +18,7 @@ function buildLiveState(payload) {
     date: payload.date ?? new Date().toISOString().slice(0, 10),
     muscles: [...(payload.muscles ?? [])],
     notes: payload.notes ?? '',
+    startedAt: payload.startedAt ?? null,
     exercises: (payload.exercises ?? []).map((ex) => ({
       name: ex.name,
       sets: (ex.sets ?? []).map((s) => ({
@@ -48,6 +50,7 @@ function toPersistPayload(workout, { requireSets }) {
     date: workout.date,
     muscles: fromEx.length ? fromEx : workout.muscles,
     notes: workout.notes ?? '',
+    startedAt: workout.startedAt ?? null,
     exercises: exercisePayload,
   }
 }
@@ -56,6 +59,7 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   const { updateSession, deleteSession, settings } = useFitness()
   const { t } = useLocale()
   const [workout, setWorkout] = useState(null)
+  const [elapsed, setElapsed] = useState(0)
   const [showRpeHint, setShowRpeHint] = useState(() => {
     try {
       return localStorage.getItem(RPE_HINT_KEY) !== '1'
@@ -77,10 +81,23 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   }, [workout])
 
   useEffect(() => {
-    if (!open || !initial) return
-    setWorkout(buildLiveState(initial))
+    if (!open || !initial || !sessionId) return
+    const startedAt = initial.startedAt || new Date().toISOString()
+    const next = buildLiveState({ ...initial, startedAt })
+    setWorkout(next)
+    if (!initial.startedAt) {
+      updateSession(sessionId, { startedAt, status: SESSION_STATUS.ACTIVE })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [open, sessionId])
+
+  useEffect(() => {
+    if (!open || !workout?.startedAt) return
+    const tick = () => setElapsed(durationBetween(workout.startedAt))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [open, workout?.startedAt])
 
   useEffect(() => {
     if (!open) return
@@ -124,8 +141,16 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
       onClose?.()
       return
     }
-    updateSession(sessionId, { ...cleaned, status: SESSION_STATUS.PAST })
-    onSaved?.({ ...cleaned, id: sessionId, status: SESSION_STATUS.PAST })
+    const endedAt = new Date().toISOString()
+    const durationSeconds = durationBetween(workout.startedAt || endedAt, endedAt)
+    const finished = {
+      ...cleaned,
+      status: SESSION_STATUS.PAST,
+      endedAt,
+      durationSeconds,
+    }
+    updateSession(sessionId, finished)
+    onSaved?.({ ...finished, id: sessionId })
     onClose?.()
   }, [workout, sessionId, updateSession, deleteSession, onClose, onSaved, timer])
 
@@ -147,7 +172,12 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
       <header className="ft-live__header">
         <div className="ft-live__header-main">
           <div className="ft-live__header-row">
-            <h2 className="ft-live__title">{t('live.title')}</h2>
+            <div className="ft-live__title-wrap">
+              <h2 className="ft-live__title">{t('live.title')}</h2>
+              <p className="ft-live__elapsed" aria-live="polite">
+                {formatDuration(elapsed)}
+              </p>
+            </div>
             <div className="ft-live__header-actions">
               <button
                 type="button"

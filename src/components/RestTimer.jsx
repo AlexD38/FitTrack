@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { animate } from 'animejs'
 import { useLocale } from '../contexts/LocaleContext'
+import { useFitness } from '../contexts/FitnessContext'
+import { playRestDoneBeep } from '../lib/timerSound'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
 
 const RING_R = 110
@@ -150,6 +152,7 @@ export function RestTimerModal({
 
 /** Shared rest-timer state for Timer page + Live workout. */
 export function useRestTimer(defaultSeconds = 90) {
+  const { settings } = useFitness()
   const initial = Math.max(5, defaultSeconds || 90)
   const [duration, setDuration] = useState(initial)
   const [remaining, setRemaining] = useState(initial)
@@ -158,6 +161,7 @@ export function useRestTimer(defaultSeconds = 90) {
   const [focused, setFocused] = useState(false)
   const timeRef = useRef(null)
   const ringRef = useRef(null)
+  const alertedRef = useRef(false)
 
   useEffect(() => {
     if (!running || remaining <= 0) return
@@ -166,7 +170,6 @@ export function useRestTimer(defaultSeconds = 90) {
         if (r <= 1) {
           setRunning(false)
           setDone(true)
-          if (navigator.vibrate) navigator.vibrate([200, 100, 200])
           return 0
         }
         return r - 1
@@ -174,6 +177,21 @@ export function useRestTimer(defaultSeconds = 90) {
     }, 1000)
     return () => clearInterval(id)
   }, [running, remaining])
+
+  useEffect(() => {
+    if (!done) {
+      alertedRef.current = false
+      return
+    }
+    if (alertedRef.current) return
+    alertedRef.current = true
+    if (settings.timerVibrate !== false && navigator.vibrate) {
+      navigator.vibrate([200, 100, 200])
+    }
+    if (settings.timerSound !== false) {
+      playRestDoneBeep()
+    }
+  }, [done, settings.timerSound, settings.timerVibrate])
 
   useEffect(() => {
     const el = timeRef.current

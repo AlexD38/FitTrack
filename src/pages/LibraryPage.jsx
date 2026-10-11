@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { PageHeader } from '../components/PageHeader'
 import { SettingsButton } from '../components/SettingsMenu'
 import { BodyMuscleMap } from '../components/BodyMuscleMap'
+import { ExerciseThumb } from '../components/ExerciseThumb'
 import { EXERCISE_LIBRARY, exerciseLabel } from '../lib/exercises'
 import { MUSCLE_GROUPS, getMuscleColor } from '../lib/muscles'
 import { muscleLabel } from '../lib/i18n'
@@ -110,12 +111,15 @@ export function LibraryPage({ onOpenSettings }) {
                 className={`ft-library__item${active ? ' ft-library__item--active' : ''}`}
                 onClick={() => selectExercise(ex)}
               >
-                <span className="ft-library__item-name">{name}</span>
-                <span
-                  className="ft-library__item-muscle"
-                  style={{ color: getMuscleColor(ex.muscle) }}
-                >
-                  {muscleLabel(locale, ex.muscle)}
+                <ExerciseThumb muscle={ex.muscle} size="md" />
+                <span className="ft-library__item-text">
+                  <span className="ft-library__item-name">{name}</span>
+                  <span
+                    className="ft-library__item-muscle"
+                    style={{ color: getMuscleColor(ex.muscle) }}
+                  >
+                    {muscleLabel(locale, ex.muscle)}
+                  </span>
                 </span>
               </button>
             </li>

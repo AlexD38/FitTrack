@@ -203,6 +203,34 @@ export function SettingsMenu({ open, onClose }) {
         </div>
 
         <div className="ft-settings__group">
+          <p className="ft-settings__label">{t('settings.timerAlerts')}</p>
+          <p className="ft-settings__hint">{t('settings.timerAlertsHint')}</p>
+          <div className="ft-settings__toggles">
+            <button
+              type="button"
+              className={`ft-settings__toggle${settings.timerSound !== false ? ' ft-settings__toggle--on' : ''}`}
+              onClick={() => updateSettings({ timerSound: settings.timerSound === false })}
+              aria-pressed={settings.timerSound !== false}
+            >
+              <FaIcon
+                icon={settings.timerSound !== false ? uiIcons.volumeOn : uiIcons.volumeOff}
+                className="ft-settings__toggle-icon"
+              />
+              <span>{t('settings.timerSound')}</span>
+            </button>
+            <button
+              type="button"
+              className={`ft-settings__toggle${settings.timerVibrate !== false ? ' ft-settings__toggle--on' : ''}`}
+              onClick={() => updateSettings({ timerVibrate: settings.timerVibrate === false })}
+              aria-pressed={settings.timerVibrate !== false}
+            >
+              <FaIcon icon={uiIcons.timer} className="ft-settings__toggle-icon" />
+              <span>{t('settings.timerVibrate')}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="ft-settings__group">
           <p className="ft-settings__label">{t('data.title')}</p>
           <div className="ft-btn-row">
             <button type="button" className="ft-btn ft-btn--secondary" onClick={handleExport}>

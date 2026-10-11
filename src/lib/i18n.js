@@ -35,11 +35,29 @@ const STRINGS = {
       empty: 'Aucune donnée pour le moment.',
       undo: 'Annuler',
       gotIt: 'Compris',
+      next: 'Suivant',
     },
     settings: {
       defaultRestHint: 'Utilisé par le timer et le bouton Repos en séance.',
       themeChanged: 'Thème mis à jour.',
       paletteChanged: 'Palette mise à jour.',
+      timerAlerts: 'Alertes timer',
+      timerAlertsHint: 'Quand le repos est terminé.',
+      timerSound: 'Son',
+      timerVibrate: 'Vibration',
+    },
+    onboarding: {
+      skip: 'Passer',
+      start: 'C’est parti',
+      step1Title: 'Journal clair',
+      step1Body:
+        'Lance, planifie ou relance une séance. Le détail reste compact : séries inline, muscles auto.',
+      step2Title: 'Repos & focus',
+      step2Body:
+        'En séance, un tap démarre le repos. Son et vibration te préviennent — réglables dans les paramètres.',
+      step3Title: 'Bibliothèque visuelle',
+      step3Body:
+        'Chaque exercice a un visuel par muscle. Réordonne tes exos avec ↑↓ pendant ou après la séance.',
     },
     palettes: {
       pulse: 'Pulse',
@@ -106,6 +124,10 @@ const STRINGS = {
       planSession: 'Programmer',
       filterStatus: 'Filtrer par statut',
       recentExercises: 'Récents',
+      reorder: 'Réordonner',
+      moveUp: 'Monter',
+      moveDown: 'Descendre',
+      duration: 'Durée',
       status: {
         past: '#passée',
         active: '#encours',
@@ -130,6 +152,7 @@ const STRINGS = {
       rpeToggle: 'RPE',
       rest: 'Repos',
       restShort: '1:30',
+      elapsed: 'Durée',
     },
     templates: {
       title: 'Programmes',
@@ -278,11 +301,29 @@ const STRINGS = {
       all: 'All',
       undo: 'Undo',
       gotIt: 'Got it',
+      next: 'Next',
     },
     settings: {
       defaultRestHint: 'Used by the timer and the Rest button in workouts.',
       themeChanged: 'Theme updated.',
       paletteChanged: 'Palette updated.',
+      timerAlerts: 'Timer alerts',
+      timerAlertsHint: 'When rest is complete.',
+      timerSound: 'Sound',
+      timerVibrate: 'Vibration',
+    },
+    onboarding: {
+      skip: 'Skip',
+      start: 'Let’s go',
+      step1Title: 'Clear journal',
+      step1Body:
+        'Start, schedule, or replay a session. Detail stays compact: inline sets, auto muscles.',
+      step2Title: 'Rest & focus',
+      step2Body:
+        'In a workout, one tap starts rest. Sound and vibration alert you — toggle them in settings.',
+      step3Title: 'Visual library',
+      step3Body:
+        'Each exercise has a muscle glyph. Reorder moves with ↑↓ during or after the session.',
     },
     palettes: {
       pulse: 'Pulse',
@@ -349,6 +390,10 @@ const STRINGS = {
       planSession: 'Schedule',
       filterStatus: 'Filter by status',
       recentExercises: 'Recent',
+      reorder: 'Reorder',
+      moveUp: 'Move up',
+      moveDown: 'Move down',
+      duration: 'Duration',
       status: {
         past: '#past',
         active: '#active',
@@ -373,6 +418,7 @@ const STRINGS = {
       rpeToggle: 'RPE',
       rest: 'Rest',
       restShort: '1:30',
+      elapsed: 'Duration',
     },
     templates: {
       title: 'Programs',

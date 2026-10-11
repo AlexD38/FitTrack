@@ -55,6 +55,8 @@ export function ExerciseBlock({
   collapsed = false,
   onExpand,
   onStartRest,
+  onMoveUp,
+  onMoveDown,
 }) {
   const { t } = useLocale()
   const [nameOpen, setNameOpen] = useState(false)
@@ -116,6 +118,28 @@ export function ExerciseBlock({
           <span className="ft-ex-block__name-text">{displayName}</span>
           <FaIcon icon={uiIcons.edit} className="ft-ex-block__name-edit" />
         </button>
+        {(onMoveUp || onMoveDown) && (
+          <div className="ft-ex-block__reorder" role="group" aria-label={t('journal.reorder')}>
+            <button
+              type="button"
+              className="ft-ex-block__reorder-btn"
+              onClick={onMoveUp}
+              disabled={!onMoveUp}
+              aria-label={t('journal.moveUp')}
+            >
+              <FaIcon icon={uiIcons.arrowUp} className="ft-ex-block__reorder-icon" />
+            </button>
+            <button
+              type="button"
+              className="ft-ex-block__reorder-btn"
+              onClick={onMoveDown}
+              disabled={!onMoveDown}
+              aria-label={t('journal.moveDown')}
+            >
+              <FaIcon icon={uiIcons.arrowDown} className="ft-ex-block__reorder-icon" />
+            </button>
+          </div>
+        )}
         {onRemove && (
           <button
             type="button"
@@ -283,6 +307,16 @@ export function ExerciseListEditor({ exercises, onChange, focusMode = false, onS
     setActiveIndex(next.length - 1)
   }
 
+  const moveAt = (idx, dir) => {
+    const target = idx + dir
+    if (target < 0 || target >= list.length) return
+    const next = [...list]
+    const [item] = next.splice(idx, 1)
+    next.splice(target, 0, item)
+    onChange(next)
+    setActiveIndex(target)
+  }
+
   return (
     <div className="ft-ex-list">
       <div className="ft-ex-list__blocks">
@@ -295,6 +329,8 @@ export function ExerciseListEditor({ exercises, onChange, focusMode = false, onS
             collapsed={focusMode && list.length > 1 && i !== activeIndex}
             onExpand={() => setActiveIndex(i)}
             onStartRest={onStartRest}
+            onMoveUp={list.length > 1 && i > 0 ? () => moveAt(i, -1) : undefined}
+            onMoveDown={list.length > 1 && i < list.length - 1 ? () => moveAt(i, 1) : undefined}
           />
         ))}
       </div>

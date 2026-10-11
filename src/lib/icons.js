@@ -1,4 +1,6 @@
 import {
+  faArrowDown,
+  faArrowUp,
   faBookOpen,
   faChartLine,
   faCheck,
@@ -16,6 +18,8 @@ import {
   faStopwatch,
   faSun,
   faTrash,
+  faVolumeHigh,
+  faVolumeXmark,
   faWeightHanging,
   faWeightScale,
   faXmark,
@@ -47,4 +51,8 @@ export const uiIcons = {
   reps: faRepeat,
   rpe: faFire,
   timer: faStopwatch,
+  arrowUp: faArrowUp,
+  arrowDown: faArrowDown,
+  volumeOn: faVolumeHigh,
+  volumeOff: faVolumeXmark,
 }

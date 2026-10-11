@@ -7,6 +7,7 @@ import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
 import { normalizeSessionStatus, statusTagKey } from '../lib/sessionStatus'
+import { formatDuration } from '../lib/duration'
 
 const MAX_MUSCLE_CHIPS = 3
 
@@ -44,6 +45,7 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
           </div>
           <p className="ft-session-card__meta">
             {exCount} {t('common.exercises')} · {vol.toLocaleString()} {t('common.kg')}
+            {session.durationSeconds > 0 ? ` · ${formatDuration(session.durationSeconds)}` : ''}
           </p>
           {visibleMuscles.length > 0 && (
             <div className="ft-session-card__chips">

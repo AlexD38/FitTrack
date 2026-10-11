@@ -23,6 +23,7 @@ import {
   todayIsoDate,
 } from '../lib/sessionStatus'
 import { musclesFromExerciseNames } from '../lib/exercises'
+import { formatDuration } from '../lib/duration'
 import { uiIcons } from '../lib/icons'
 
 const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
@@ -119,11 +120,19 @@ export function JournalPage({ onOpenSettings }) {
         updateSession(active.id, { status: SESSION_STATUS.PAST })
       }
       if (existingId) {
-        updateSession(existingId, { ...payload, status: SESSION_STATUS.ACTIVE })
+        updateSession(existingId, {
+          ...payload,
+          status: SESSION_STATUS.ACTIVE,
+          startedAt: payload.startedAt ?? new Date().toISOString(),
+        })
         openLiveById(existingId)
         return
       }
-      const id = addSession({ ...payload, status: SESSION_STATUS.ACTIVE })
+      const id = addSession({
+        ...payload,
+        status: SESSION_STATUS.ACTIVE,
+        startedAt: payload.startedAt ?? new Date().toISOString(),
+      })
       openLiveById(id)
     },
     [sessions, addSession, updateSession, openLiveById],
@@ -315,6 +324,12 @@ export function JournalPage({ onOpenSettings }) {
                 onChange={(e) => patchDetailSession({ date: e.target.value })}
               />
             </label>
+
+            {detailSession.durationSeconds > 0 && (
+              <p className="ft-session-detail__duration">
+                {t('journal.duration')}: {formatDuration(detailSession.durationSeconds)}
+              </p>
+            )}
 
             <label className="ft-field">
               <span className="ft-field__label">{t('journal.notes')}</span>

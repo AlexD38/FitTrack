@@ -12,6 +12,8 @@ const DEFAULT_SETTINGS = {
   palette: DEFAULT_PALETTE,
   weightUnit: 'kg',
   defaultRestSeconds: 90,
+  timerSound: true,
+  timerVibrate: true,
   weightGoal: null,
   exerciseGoals: {},
 }
