@@ -582,6 +582,10 @@
   border-top: 1px solid var(--color-border);
 }
 
+.ft-session-card__bar--single {
+  grid-template-columns: 1fr;
+}
+
 .ft-session-card__action {
   display: inline-flex;
   align-items: center;
@@ -614,6 +618,12 @@
 
 .ft-session-card__action--edit {
   color: var(--color-ink);
+}
+
+.ft-session-card__action--delete {
+  border-color: color-mix(in srgb, var(--color-negative) 45%, var(--color-border));
+  background: color-mix(in srgb, var(--color-negative) 12%, transparent);
+  color: var(--color-negative);
 }
 
 .ft-session-card__action-icon {
@@ -689,6 +699,13 @@
   width: 100%;
   min-height: 3rem;
   gap: var(--space-2);
+}
+
+.ft-session-detail__delete {
+  width: 100%;
+  min-height: 3rem;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 @keyframes ft-session-detail-in {

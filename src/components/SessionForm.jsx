@@ -1,7 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ExerciseListEditor, createEmptyExercise } from './ExerciseEditor'
 import { musclesFromExerciseNames } from '../lib/exercises'
-import { normalizeSetsForSave } from '../lib/sets'
 import { muscleLabel } from '../lib/i18n'
 import { useLocale } from '../contexts/LocaleContext'
 
@@ -21,8 +20,8 @@ function syncMuscles(exercises) {
   return musclesFromExerciseNames(exercises.map((e) => e.name))
 }
 
-function softNormalizeExercises(exercises) {
-  return exercises
+function persistPayload(date, notes, exercises, fallbackMuscles) {
+  const cleaned = exercises
     .filter((ex) => ex.name?.trim())
     .map((ex) => ({
       name: ex.name.trim(),
@@ -32,18 +31,17 @@ function softNormalizeExercises(exercises) {
         rpe: s.rpe === '' || s.rpe == null ? 5 : Number(s.rpe),
       })),
     }))
+  const nextMuscles = musclesFromExerciseNames(cleaned.map((e) => e.name))
+  return {
+    date,
+    notes: notes.trim(),
+    muscles: nextMuscles.length ? nextMuscles : fallbackMuscles,
+    exercises: cleaned,
+  }
 }
 
-function strictNormalizeExercises(exercises) {
-  return exercises
-    .map((ex) => ({
-      name: ex.name?.trim() ?? '',
-      sets: normalizeSetsForSave(ex.sets),
-    }))
-    .filter((ex) => ex.name && ex.sets.length)
-}
-
-export function SessionForm({ initial, onSave, onCancel, draftMode = false }) {
+/** Live-editing session form — every change persists immediately (no Save). */
+export function SessionForm({ initial, onChange }) {
   const { locale, t } = useLocale()
   const [date, setDate] = useState(() => initial?.date ?? new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState(() => initial?.notes ?? '')
@@ -54,24 +52,22 @@ export function SessionForm({ initial, onSave, onCancel, draftMode = false }) {
     return fromEx.length ? fromEx : (initial?.muscles ?? [])
   })
 
+  const onChangeRef = useRef(onChange)
+  useEffect(() => {
+    onChangeRef.current = onChange
+  }, [onChange])
+
+  const emit = (nextDate, nextNotes, nextExercises, nextMuscles) => {
+    onChangeRef.current?.(persistPayload(nextDate, nextNotes, nextExercises, nextMuscles))
+  }
+
   const applyExercises = (next) => {
     setExercises(next)
     const inferred = syncMuscles(next)
     const hasNamed = next.some((e) => e.name?.trim())
-    if (inferred.length) setMuscles(inferred)
-    else if (!hasNamed) setMuscles([])
-  }
-
-  const handleSave = () => {
-    const cleaned = draftMode ? softNormalizeExercises(exercises) : strictNormalizeExercises(exercises)
-    if (cleaned.length === 0) return
-    const nextMuscles = musclesFromExerciseNames(cleaned.map((e) => e.name))
-    onSave({
-      date,
-      muscles: nextMuscles.length ? nextMuscles : muscles,
-      notes: notes.trim(),
-      exercises: cleaned,
-    })
+    const nextMuscles = inferred.length ? inferred : hasNamed ? muscles : []
+    setMuscles(nextMuscles)
+    emit(date, notes, next, nextMuscles)
   }
 
   return (
@@ -82,7 +78,11 @@ export function SessionForm({ initial, onSave, onCancel, draftMode = false }) {
           className="ft-input"
           type="date"
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value
+            setDate(next)
+            emit(next, notes, exercises, muscles)
+          }}
         />
       </label>
 
@@ -92,7 +92,11 @@ export function SessionForm({ initial, onSave, onCancel, draftMode = false }) {
           className="ft-input"
           rows={2}
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => {
+            const next = e.target.value
+            setNotes(next)
+            emit(date, next, exercises, muscles)
+          }}
           placeholder={t('journal.notes')}
         />
       </label>
@@ -108,15 +112,6 @@ export function SessionForm({ initial, onSave, onCancel, draftMode = false }) {
       )}
 
       <ExerciseListEditor exercises={exercises} onChange={applyExercises} />
-
-      <div className="ft-btn-row" style={{ marginTop: 'var(--space-4)' }}>
-        <button type="button" className="ft-btn ft-btn--secondary" onClick={onCancel}>
-          {t('common.cancel')}
-        </button>
-        <button type="button" className="ft-btn ft-btn--primary" onClick={handleSave}>
-          {t('common.save')}
-        </button>
-      </div>
     </div>
   )
 }

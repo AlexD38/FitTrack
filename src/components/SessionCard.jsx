@@ -9,7 +9,7 @@ import { uiIcons } from '../lib/icons'
 import { BodyMuscleMap } from './BodyMuscleMap'
 import { normalizeSessionStatus, statusTagKey } from '../lib/sessionStatus'
 
-export function SessionCard({ session, pinned = false, onOpen, onEdit, onReplay, primaryLabel }) {
+export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelete, primaryLabel }) {
   const { locale, t } = useLocale()
   const dateLocale = locale === 'fr' ? fr : enUS
   const dateStr = format(parseISO(session.date), 'EEEE d MMMM yyyy', { locale: dateLocale })
@@ -17,6 +17,7 @@ export function SessionCard({ session, pinned = false, onOpen, onEdit, onReplay,
   const exCount = session.exercises?.length ?? 0
   const muscles = session.muscles ?? []
   const status = normalizeSessionStatus(session.status)
+  const showBar = onReplay || onDelete
 
   return (
     <article
@@ -65,34 +66,36 @@ export function SessionCard({ session, pinned = false, onOpen, onEdit, onReplay,
         <BodyMuscleMap active={muscles} size="sm" className="ft-session-card__body" />
       )}
 
-      <div
-        className="ft-session-card__bar"
-        role="group"
-        aria-label={t('journal.sessionDetail')}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        {onReplay && (
-          <button
-            type="button"
-            className="ft-session-card__action ft-session-card__action--play"
-            onClick={() => onReplay(session)}
-          >
-            <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
-            <span>{primaryLabel ?? t('live.replay')}</span>
-          </button>
-        )}
-        {onEdit && (
-          <button
-            type="button"
-            className="ft-session-card__action ft-session-card__action--edit"
-            onClick={() => onEdit(session)}
-          >
-            <FaIcon icon={uiIcons.edit} className="ft-session-card__action-icon" />
-            <span>{t('common.edit')}</span>
-          </button>
-        )}
-      </div>
+      {showBar && (
+        <div
+          className={`ft-session-card__bar${onReplay && onDelete ? '' : ' ft-session-card__bar--single'}`}
+          role="group"
+          aria-label={t('journal.sessionDetail')}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          {onReplay && (
+            <button
+              type="button"
+              className="ft-session-card__action ft-session-card__action--play"
+              onClick={() => onReplay(session)}
+            >
+              <FaIcon icon={uiIcons.play} className="ft-session-card__action-icon" />
+              <span>{primaryLabel ?? t('live.replay')}</span>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              className="ft-session-card__action ft-session-card__action--delete"
+              onClick={() => onDelete(session)}
+            >
+              <FaIcon icon={uiIcons.trash} className="ft-session-card__action-icon" />
+              <span>{t('common.delete')}</span>
+            </button>
+          )}
+        </div>
+      )}
     </article>
   )
 }

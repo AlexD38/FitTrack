@@ -4,7 +4,6 @@ import { SettingsButton } from '../components/SettingsMenu'
 import { SessionCard } from '../components/SessionCard'
 import { EmptyState } from '../components/EmptyState'
 import { BottomSheet } from '../components/BottomSheet'
-import { SessionForm } from '../components/SessionForm'
 import { LiveWorkout } from '../components/LiveWorkout'
 import { TemplatePicker } from '../components/TemplatePicker'
 import { ExerciseListEditor } from '../components/ExerciseEditor'
@@ -12,20 +11,22 @@ import { FaIcon } from '../components/FaIcon'
 import { staggerListItems } from '../lib/pageTransition'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
-import { pastSessionsOnly, SESSION_STATUS, findActiveSession, normalizeSessionStatus, resolveSessionStatus, isActiveSession, todayIsoDate } from '../lib/sessionStatus'
+import {
+  pastSessionsOnly,
+  SESSION_STATUS,
+  findActiveSession,
+  normalizeSessionStatus,
+  resolveSessionStatus,
+  isActiveSession,
+  todayIsoDate,
+} from '../lib/sessionStatus'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { uiIcons } from '../lib/icons'
 
 const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
 
 export function JournalPage({ onOpenSettings }) {
-  const {
-    sessions,
-    addSession,
-    updateSession,
-    deleteSession,
-    cloneSessionPayload,
-  } = useFitness()
+  const { sessions, addSession, updateSession, deleteSession, cloneSessionPayload } = useFitness()
   const { t } = useLocale()
   const listRef = useRef(null)
 
@@ -36,9 +37,7 @@ export function JournalPage({ onOpenSettings }) {
   const [statusFilter, setStatusFilter] = useState('all')
 
   useEffect(() => {
-    if (listRef.current) {
-      staggerListItems(listRef.current)
-    }
+    if (listRef.current) staggerListItems(listRef.current)
   }, [sessions, statusFilter])
 
   const pinnedActive = useMemo(() => {
@@ -47,10 +46,7 @@ export function JournalPage({ onOpenSettings }) {
   }, [sessions, statusFilter])
 
   const filteredSessions = useMemo(() => {
-    if (statusFilter === 'all') {
-      // Active sessions are rendered in the pinned block above.
-      return sessions.filter((s) => !isActiveSession(s))
-    }
+    if (statusFilter === 'all') return sessions.filter((s) => !isActiveSession(s))
     if (statusFilter === SESSION_STATUS.ACTIVE) return []
     return sessions.filter((s) => resolveSessionStatus(s) === statusFilter)
   }, [sessions, statusFilter])
@@ -63,13 +59,24 @@ export function JournalPage({ onOpenSettings }) {
   )
 
   const detailSession = useMemo(() => {
-    if (sheet?.mode !== 'detail' || !sheet.session?.id) return sheet?.session ?? null
+    if (sheet?.mode !== 'detail' || !sheet.session?.id) return null
     return sessions.find((s) => s.id === sheet.session.id) ?? sheet.session
   }, [sheet, sessions])
 
   const openDetail = (session) => setSheet({ mode: 'detail', session })
-  const openEdit = (session) => setSheet({ mode: 'edit', session })
   const closeSheet = () => setSheet(null)
+
+  const patchDetailSession = useCallback(
+    (patch) => {
+      if (!detailSession?.id) return
+      const wasActive = normalizeSessionStatus(detailSession.status) === SESSION_STATUS.ACTIVE
+      updateSession(detailSession.id, {
+        ...patch,
+        ...(wasActive ? { status: SESSION_STATUS.ACTIVE } : {}),
+      })
+    },
+    [detailSession, updateSession],
+  )
 
   const openStartPicker = () => {
     setPickerIntent('start')
@@ -83,34 +90,11 @@ export function JournalPage({ onOpenSettings }) {
 
   const closePicker = () => setPickerOpen(false)
 
-  const handleSave = useCallback(
-    (data) => {
-      if (sheet?.mode === 'edit' && sheet.session) {
-        const wasActive =
-          normalizeSessionStatus(sheet.session.status) === SESSION_STATUS.ACTIVE
-        updateSession(sheet.session.id, {
-          ...data,
-          ...(wasActive ? { status: SESSION_STATUS.ACTIVE } : {}),
-        })
-        if (sheet.fromDetail) {
-          setSheet({
-            mode: 'detail',
-            session: { ...sheet.session, ...data },
-          })
-          return
-        }
-      }
-      closeSheet()
-    },
-    [sheet, updateSession],
-  )
-
   const scheduleUpcoming = useCallback(
     (payload) => {
       closePicker()
       const id = addSession({ ...payload, status: SESSION_STATUS.UPCOMING })
-      const created = { ...payload, id, status: SESSION_STATUS.UPCOMING }
-      setSheet({ mode: 'detail', session: created })
+      setSheet({ mode: 'detail', session: { ...payload, id, status: SESSION_STATUS.UPCOMING } })
       return id
     },
     [addSession],
@@ -127,13 +111,16 @@ export function JournalPage({ onOpenSettings }) {
     setLiveId(id)
   }, [])
 
-  /** One active session at a time: resume existing, or promote/create. */
   const startOrResumeLive = useCallback(
-    (payload, { existingId } = {}) => {
+    (payload, { existingId, replaceActive = false } = {}) => {
       const active = findActiveSession(sessions)
-      if (active && (!existingId || active.id !== existingId)) {
+      if (active && !replaceActive && (!existingId || active.id !== existingId)) {
         openLiveById(active.id)
         return
+      }
+      // Explicit Relancer / start from a card: archive any other #encours first.
+      if (active && replaceActive && active.id !== existingId) {
+        updateSession(active.id, { status: SESSION_STATUS.PAST })
       }
       if (existingId) {
         updateSession(existingId, { ...payload, status: SESSION_STATUS.ACTIVE })
@@ -152,12 +139,13 @@ export function JournalPage({ onOpenSettings }) {
       openLiveById(session.id)
       return
     }
-    // Lancer / Relancer: copy session → today + #encours (original unchanged)
-    const payload = {
-      ...cloneSessionPayload(session, todayIsoDate()),
-      status: SESSION_STATUS.ACTIVE,
-    }
-    startOrResumeLive(payload)
+    startOrResumeLive(
+      {
+        ...cloneSessionPayload(session, todayIsoDate()),
+        status: SESSION_STATUS.ACTIVE,
+      },
+      { replaceActive: true },
+    )
   }
 
   const blankLivePayload = () => ({
@@ -182,7 +170,7 @@ export function JournalPage({ onOpenSettings }) {
       return
     }
     closePicker()
-    startOrResumeLive(payload)
+    startOrResumeLive(payload, { replaceActive: true })
   }
 
   const handlePickerPast = (session) => {
@@ -192,7 +180,7 @@ export function JournalPage({ onOpenSettings }) {
       return
     }
     closePicker()
-    startOrResumeLive(payload)
+    startOrResumeLive(payload, { replaceActive: true })
   }
 
   const primaryLabel = (session) => {
@@ -218,8 +206,7 @@ export function JournalPage({ onOpenSettings }) {
       <div className="ft-journal-filters" role="tablist" aria-label={t('journal.filterStatus')}>
         {FILTERS.map((key) => {
           const active = statusFilter === key
-          const label =
-            key === 'all' ? t('common.all') : t(`journal.status.${key}`)
+          const label = key === 'all' ? t('common.all') : t(`journal.status.${key}`)
           return (
             <button
               key={key}
@@ -248,8 +235,8 @@ export function JournalPage({ onOpenSettings }) {
                 session={s}
                 pinned
                 onOpen={openDetail}
-                onEdit={openEdit}
                 onReplay={handlePrimaryAction}
+                onDelete={handleDeleteFromList}
                 primaryLabel={primaryLabel(s)}
               />
             ))}
@@ -258,8 +245,8 @@ export function JournalPage({ onOpenSettings }) {
                 key={s.id}
                 session={s}
                 onOpen={openDetail}
-                onEdit={openEdit}
                 onReplay={handlePrimaryAction}
+                onDelete={handleDeleteFromList}
                 primaryLabel={primaryLabel(s)}
               />
             ))}
@@ -285,79 +272,54 @@ export function JournalPage({ onOpenSettings }) {
       </BottomSheet>
 
       <BottomSheet
-        open={sheet?.mode === 'detail' && Boolean(detailSession)}
+        open={Boolean(detailSession)}
         onClose={closeSheet}
         title={t('journal.sessionDetail')}
         showBack
       >
         {detailSession && (
           <div className="ft-session-detail">
+            <label className="ft-field">
+              <span className="ft-field__label">{t('journal.date')}</span>
+              <input
+                className="ft-input"
+                type="date"
+                value={detailSession.date}
+                onChange={(e) => patchDetailSession({ date: e.target.value })}
+              />
+            </label>
+
+            <label className="ft-field">
+              <span className="ft-field__label">{t('journal.notes')}</span>
+              <textarea
+                className="ft-input"
+                rows={2}
+                value={detailSession.notes ?? ''}
+                onChange={(e) => patchDetailSession({ notes: e.target.value })}
+                placeholder={t('journal.notes')}
+              />
+            </label>
+
             <ExerciseListEditor
               exercises={detailSession.exercises?.length ? detailSession.exercises : undefined}
               onChange={(exercises) => {
                 const fromEx = musclesFromExerciseNames(exercises.map((e) => e.name))
-                const wasActive =
-                  normalizeSessionStatus(detailSession.status) === SESSION_STATUS.ACTIVE
-                updateSession(detailSession.id, {
+                patchDetailSession({
                   exercises,
                   muscles: fromEx.length ? fromEx : detailSession.muscles,
-                  ...(wasActive ? { status: SESSION_STATUS.ACTIVE } : {}),
                 })
               }}
             />
-            {detailSession.notes ? (
-              <p className="ft-session-card__notes">{detailSession.notes}</p>
-            ) : null}
-            <div className="ft-session-detail__actions">
-              <button
-                type="button"
-                className="ft-btn ft-btn--secondary"
-                onClick={() => {
-                  setSheet({ mode: 'edit', session: detailSession, fromDetail: true })
-                }}
-              >
-                <FaIcon icon={uiIcons.edit} className="ft-session-card__delete-icon" />
-                {t('common.edit')}
-              </button>
-              <button
-                type="button"
-                className="ft-btn ft-btn--danger"
-                onClick={() => handleDeleteFromList(detailSession)}
-              >
-                <FaIcon icon={uiIcons.trash} className="ft-session-card__delete-icon" />
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        )}
-      </BottomSheet>
 
-      <BottomSheet
-        open={sheet?.mode === 'edit'}
-        onClose={() => {
-          if (sheet?.fromDetail && sheet.session) {
-            setSheet({ mode: 'detail', session: sheet.session })
-            return
-          }
-          closeSheet()
-        }}
-        title={t('journal.editSession')}
-        showBack
-      >
-        {sheet?.mode === 'edit' && sheet.session && (
-          <SessionForm
-            key={sheet.session.id}
-            initial={sheet.session}
-            draftMode={normalizeSessionStatus(sheet.session.status) === SESSION_STATUS.UPCOMING}
-            onSave={handleSave}
-            onCancel={() => {
-              if (sheet.fromDetail) {
-                setSheet({ mode: 'detail', session: sheet.session })
-                return
-              }
-              closeSheet()
-            }}
-          />
+            <button
+              type="button"
+              className="ft-btn ft-btn--danger ft-session-detail__delete"
+              onClick={() => handleDeleteFromList(detailSession)}
+            >
+              <FaIcon icon={uiIcons.trash} className="ft-session-card__delete-icon" />
+              {t('common.delete')}
+            </button>
+          </div>
         )}
       </BottomSheet>
 
