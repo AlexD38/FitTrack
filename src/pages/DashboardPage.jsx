@@ -21,12 +21,13 @@ import {
 } from '../lib/stats'
 import { statsSessionsOnly } from '../lib/sessionStatus'
 
-export function DashboardPage({ onOpenSettings }) {
+export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
   const { sessions, weightEntries, settings } = useFitness()
   const { t } = useLocale()
   const statsSessions = useMemo(() => statsSessionsOnly(sessions), [sessions])
   const exerciseNames = useMemo(() => getAllExerciseNames(statsSessions), [statsSessions])
   const [selectedExercise, setSelectedExercise] = useState(exerciseNames[0] ?? '')
+  const isFresh = statsSessions.length === 0
 
   useEffect(() => {
     if (!exerciseNames.length) {
@@ -55,19 +56,36 @@ export function DashboardPage({ onOpenSettings }) {
     <>
       <PageHeader title={t('dashboard.title')} actions={<SettingsButton onClick={onOpenSettings} />} />
 
-      <div className="ft-kpi-grid">
-        <KpiCard label={t('dashboard.sessionsMonth')} value={monthCount} />
-        <KpiCard label={t('dashboard.weekVolume')} value={weekVol} sub="kg" />
-      </div>
+      {isFresh ? (
+        <section className="ft-section ft-glass ft-glass--pad ft-dashboard-hero">
+          <EmptyState
+            title={t('dashboard.getStartedTitle')}
+            message={t('dashboard.getStarted')}
+            actionLabel={t('live.startBlank')}
+            onAction={onGoJournal}
+          />
+        </section>
+      ) : (
+        <>
+          <div className="ft-kpi-grid">
+            <KpiCard label={t('dashboard.sessionsMonth')} value={monthCount} />
+            <KpiCard label={t('dashboard.weekVolume')} value={weekVol} sub="kg" />
+          </div>
+          <ActivityHeatmap sessions={sessions} />
+        </>
+      )}
 
-      <ActivityHeatmap sessions={sessions} />
-
+      {!isFresh && (
       <section className="ft-section ft-glass ft-glass--pad">
         <div className="ft-section__head">
           <h2 className="ft-section__title">{t('dashboard.exerciseProgress')}</h2>
         </div>
         {exerciseNames.length === 0 ? (
-          <EmptyState message={t('dashboard.noExercises')} />
+          <EmptyState
+            message={t('dashboard.noExercises')}
+            actionLabel={t('live.startBlank')}
+            onAction={onGoJournal}
+          />
         ) : (
           <>
             <label className="ft-field__label" htmlFor="ft-dash-exercise">
@@ -94,8 +112,9 @@ export function DashboardPage({ onOpenSettings }) {
           </>
         )}
       </section>
+      )}
 
-      {goalEntries.length > 0 && (
+      {!isFresh && goalEntries.length > 0 && (
         <section className="ft-section ft-glass ft-glass--pad">
           <div className="ft-section__head">
             <h2 className="ft-section__title">{t('dashboard.forceGoals')}</h2>
@@ -121,6 +140,7 @@ export function DashboardPage({ onOpenSettings }) {
         </section>
       )}
 
+      {!isFresh && (
       <section className="ft-section ft-glass ft-glass--pad">
         <div className="ft-section__head">
           <h2 className="ft-section__title">{t('dashboard.weeklyVolume')}</h2>
@@ -131,7 +151,9 @@ export function DashboardPage({ onOpenSettings }) {
           <EmptyState message={t('dashboard.noVolume')} />
         )}
       </section>
+      )}
 
+      {!isFresh && (
       <section className="ft-section ft-glass ft-glass--pad">
         <div className="ft-section__head">
           <h2 className="ft-section__title">{t('dashboard.muscleSplit')}</h2>
@@ -142,6 +164,7 @@ export function DashboardPage({ onOpenSettings }) {
           <EmptyState message={t('dashboard.noMuscles')} />
         )}
       </section>
+      )}
 
       <section className="ft-section ft-glass ft-glass--pad">
         <div className="ft-section__head">
@@ -150,7 +173,11 @@ export function DashboardPage({ onOpenSettings }) {
         {weightData.length >= 2 ? (
           <WeightTrendChart data={weightData} goal={settings.weightGoal} />
         ) : (
-          <EmptyState message={t('dashboard.noWeight')} />
+          <EmptyState
+            message={t('dashboard.noWeight')}
+            actionLabel={t('weight.addEntry')}
+            onAction={onGoWeight}
+          />
         )}
       </section>
     </>

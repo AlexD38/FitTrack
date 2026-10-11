@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { ExerciseAutocomplete } from './ExerciseAutocomplete'
@@ -48,7 +48,14 @@ function carryForwardSet(sets) {
 }
 
 /** One exercise block: name sheet + inline set rows. */
-export function ExerciseBlock({ exercise, onChange, onRemove }) {
+export function ExerciseBlock({
+  exercise,
+  onChange,
+  onRemove,
+  collapsed = false,
+  onExpand,
+  onStartRest,
+}) {
   const { t } = useLocale()
   const [nameOpen, setNameOpen] = useState(false)
   const sets = exercise.sets?.length ? exercise.sets : [emptySet()]
@@ -76,8 +83,27 @@ export function ExerciseBlock({ exercise, onChange, onRemove }) {
     onChange({ ...exercise, sets: sets.filter((_, i) => i !== idx) })
   }
 
+  if (collapsed) {
+    return (
+      <section className="ft-ex-block ft-ex-block--collapsed">
+        <button type="button" className="ft-ex-block__collapsed" onClick={onExpand}>
+          <span className="ft-ex-block__icon-wrap" aria-hidden="true">
+            <FaIcon icon={uiIcons.dumbbell} className="ft-ex-block__icon" />
+          </span>
+          <span className="ft-ex-block__collapsed-text">
+            <span className={`ft-ex-block__name-text${emptyName ? ' ft-ex-block__name--empty' : ''}`}>
+              {displayName}
+            </span>
+            <span className="ft-ex-block__summary">{formatSetSummary(sets, t)}</span>
+          </span>
+          <FaIcon icon={uiIcons.chevronDown} className="ft-ex-block__chevron" />
+        </button>
+      </section>
+    )
+  }
+
   return (
-    <section className="ft-ex-block">
+    <section className="ft-ex-block ft-ex-block--active">
       <header className="ft-ex-block__head">
         <button
           type="button"
@@ -181,10 +207,22 @@ export function ExerciseBlock({ exercise, onChange, onRemove }) {
         ))}
       </div>
 
-      <button type="button" className="ft-btn ft-btn--secondary ft-ex-block__add-set" onClick={addSet}>
-        <FaIcon icon={uiIcons.add} className="ft-ex-block__add-icon" />
-        {t('journal.addSet')}
-      </button>
+      <div className={`ft-ex-block__set-actions${onStartRest ? '' : ' ft-ex-block__set-actions--single'}`}>
+        <button type="button" className="ft-btn ft-btn--secondary ft-ex-block__add-set" onClick={addSet}>
+          <FaIcon icon={uiIcons.add} className="ft-ex-block__add-icon" />
+          {t('journal.addSet')}
+        </button>
+        {onStartRest && (
+          <button
+            type="button"
+            className="ft-btn ft-btn--secondary ft-ex-block__rest"
+            onClick={onStartRest}
+          >
+            <FaIcon icon={uiIcons.timer} className="ft-ex-block__add-icon" />
+            {t('live.rest')}
+          </button>
+        )}
+      </div>
 
       <BottomSheet
         open={nameOpen}
@@ -216,11 +254,18 @@ export function ExerciseBlock({ exercise, onChange, onRemove }) {
 
 /**
  * Inline exercise list shared by live workout + journal detail.
- * Set logging is on-screen; only the exercise name uses a sheet.
+ * `focusMode` collapses inactive exercises so the current one stays primary.
  */
-export function ExerciseListEditor({ exercises, onChange }) {
+export function ExerciseListEditor({ exercises, onChange, focusMode = false, onStartRest }) {
   const { t } = useLocale()
   const list = exercises?.length ? exercises : [createEmptyExercise()]
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  useEffect(() => {
+    if (activeIndex > list.length - 1) {
+      setActiveIndex(Math.max(0, list.length - 1))
+    }
+  }, [list.length, activeIndex])
 
   const updateAt = (idx, updated) => {
     onChange(list.map((ex, i) => (i === idx ? updated : ex)))
@@ -229,10 +274,13 @@ export function ExerciseListEditor({ exercises, onChange }) {
   const removeAt = (idx) => {
     if (list.length <= 1) return
     onChange(list.filter((_, i) => i !== idx))
+    if (activeIndex >= list.length - 1) setActiveIndex(Math.max(0, list.length - 2))
   }
 
   const addExercise = () => {
-    onChange([...list, createEmptyExercise()])
+    const next = [...list, createEmptyExercise()]
+    onChange(next)
+    setActiveIndex(next.length - 1)
   }
 
   return (
@@ -244,6 +292,9 @@ export function ExerciseListEditor({ exercises, onChange }) {
             exercise={ex}
             onChange={(updated) => updateAt(i, updated)}
             onRemove={list.length > 1 ? () => removeAt(i) : undefined}
+            collapsed={focusMode && list.length > 1 && i !== activeIndex}
+            onExpand={() => setActiveIndex(i)}
+            onStartRest={onStartRest}
           />
         ))}
       </div>

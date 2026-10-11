@@ -58,6 +58,8 @@ const STRINGS = {
       noMuscles: 'Ajoutez des muscles à vos séances pour voir la répartition.',
       noWeight: 'Enregistrez votre poids pour voir l\'évolution.',
       forceGoals: 'Objectifs de force',
+      getStartedTitle: 'Prêt à t’entraîner ?',
+      getStarted: 'Lance ta première séance pour remplir le dashboard et suivre ta progression.',
     },
     library: {
       title: 'Bibliothèque',
@@ -115,6 +117,8 @@ const STRINGS = {
       removeSet: 'Retirer',
       progress: 'Progression',
       rpeToggle: 'RPE',
+      rest: 'Repos',
+      restShort: '1:30',
     },
     templates: {
       title: 'Programmes',
@@ -147,6 +151,7 @@ const STRINGS = {
       label: 'RPE',
       easy: 'Facile',
       hard: 'Max',
+      hint: '1 = facile, 10 = effort maximal. Ajuste après chaque série.',
     },
     goals: {
       title: 'Objectifs',
@@ -196,6 +201,9 @@ const STRINGS = {
       sinceStart: 'Depuis le début',
       sinceLast: 'Depuis la dernière',
       empty: 'Aucune pesée enregistrée. Ajoutez votre poids pour suivre votre évolution.',
+      getStartedTitle: 'Suivre ton poids',
+      getStarted: 'Commence par enregistrer ta pesée actuelle. Tu pourras fixer un objectif ensuite.',
+      needMoreEntries: 'Ajoute encore une pesée pour voir la courbe.',
       days30: '30 jours',
       days90: '90 jours',
       goal: 'Objectif',
@@ -276,6 +284,8 @@ const STRINGS = {
       noMuscles: 'Add muscles to your sessions to see the split.',
       noWeight: 'Log your weight to see the trend.',
       forceGoals: 'Strength goals',
+      getStartedTitle: 'Ready to train?',
+      getStarted: 'Start your first workout to fill the dashboard and track progress.',
     },
     library: {
       title: 'Exercise library',
@@ -333,6 +343,8 @@ const STRINGS = {
       removeSet: 'Remove',
       progress: 'Progress',
       rpeToggle: 'RPE',
+      rest: 'Rest',
+      restShort: '1:30',
     },
     templates: {
       title: 'Programs',
@@ -365,6 +377,7 @@ const STRINGS = {
       label: 'RPE',
       easy: 'Easy',
       hard: 'Max',
+      hint: '1 = easy, 10 = max effort. Adjust after each set.',
     },
     goals: {
       title: 'Goals',
@@ -414,6 +427,9 @@ const STRINGS = {
       sinceStart: 'Since start',
       sinceLast: 'Since last',
       empty: 'No weigh-ins yet. Log your weight to track progress.',
+      getStartedTitle: 'Track your weight',
+      getStarted: 'Log your current weight first. You can set a goal after that.',
+      needMoreEntries: 'Add one more weigh-in to see the chart.',
       days30: '30 days',
       days90: '90 days',
       goal: 'Goal',

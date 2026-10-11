@@ -31,11 +31,15 @@ export default function Home() {
   )
 
   const settingsProps = { onOpenSettings: openSettings }
+  const goJournal = useCallback(() => handleNav('journal'), [handleNav])
+  const goWeight = useCallback(() => handleNav('weight'), [handleNav])
 
   return (
     <div className="ft-shell">
       <main className="ft-page" ref={pageRef}>
-        {screen === 'dashboard' && <DashboardPage {...settingsProps} />}
+        {screen === 'dashboard' && (
+          <DashboardPage {...settingsProps} onGoJournal={goJournal} onGoWeight={goWeight} />
+        )}
         {screen === 'journal' && <JournalPage {...settingsProps} />}
         {screen === 'library' && <LibraryPage {...settingsProps} />}
         {screen === 'timer' && <TimerPage {...settingsProps} />}

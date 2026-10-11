@@ -2,12 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
 import { ExerciseListEditor, createEmptyExercise } from './ExerciseEditor'
+import { RestTimerModal, formatRestTime, useRestTimer } from './RestTimer'
 import { FaIcon } from './FaIcon'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { normalizeSetsForSave } from '../lib/sets'
 import { SESSION_STATUS } from '../lib/sessionStatus'
 import { lockBodyScroll, unlockBodyScroll } from '../lib/bodyScrollLock'
 import { uiIcons } from '../lib/icons'
+
+const RPE_HINT_KEY = 'ft-rpe-hint-seen'
 
 function buildLiveState(payload) {
   return {
@@ -30,11 +33,13 @@ function toPersistPayload(workout, { requireSets }) {
     .filter((ex) => ex.name?.trim())
     .map((ex) => ({
       name: ex.name.trim(),
-      sets: requireSets ? normalizeSetsForSave(ex.sets) : (ex.sets ?? []).map((s) => ({
-        weight: s.weight === '' || s.weight == null ? 0 : s.weight,
-        reps: s.reps ?? '',
-        rpe: s.rpe === '' || s.rpe == null ? 5 : s.rpe,
-      })),
+      sets: requireSets
+        ? normalizeSetsForSave(ex.sets)
+        : (ex.sets ?? []).map((s) => ({
+            weight: s.weight === '' || s.weight == null ? 0 : s.weight,
+            reps: s.reps ?? '',
+            rpe: s.rpe === '' || s.rpe == null ? 5 : s.rpe,
+          })),
     }))
     .filter((ex) => (requireSets ? ex.sets.length > 0 : true))
 
@@ -48,11 +53,20 @@ function toPersistPayload(workout, { requireSets }) {
 }
 
 export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
-  const { updateSession, deleteSession } = useFitness()
+  const { updateSession, deleteSession, settings } = useFitness()
   const { t } = useLocale()
   const [workout, setWorkout] = useState(null)
+  const [showRpeHint, setShowRpeHint] = useState(() => {
+    try {
+      return localStorage.getItem(RPE_HINT_KEY) !== '1'
+    } catch {
+      return true
+    }
+  })
   const workoutRef = useRef(null)
   const sessionIdRef = useRef(sessionId)
+  const restSeconds = settings.defaultRestSeconds ?? 90
+  const timer = useRestTimer(restSeconds)
 
   useEffect(() => {
     sessionIdRef.current = sessionId
@@ -65,7 +79,6 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   useEffect(() => {
     if (!open || !initial) return
     setWorkout(buildLiveState(initial))
-    // Reset only when opening a different session — not on every sessions refresh.
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [open, sessionId])
 
@@ -84,9 +97,10 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   }, [updateSession])
 
   const handleClose = useCallback(() => {
+    timer.handleClose()
     persistActive()
     onClose?.()
-  }, [persistActive, onClose])
+  }, [persistActive, onClose, timer])
 
   const setExercises = (next) => {
     setWorkout((prev) => {
@@ -103,6 +117,7 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
 
   const handleFinish = useCallback(() => {
     if (!workout || !sessionId) return
+    timer.handleClose()
     const cleaned = toPersistPayload(workout, { requireSets: true })
     if (cleaned.exercises.length === 0) {
       deleteSession(sessionId)
@@ -112,7 +127,18 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
     updateSession(sessionId, { ...cleaned, status: SESSION_STATUS.PAST })
     onSaved?.({ ...cleaned, id: sessionId, status: SESSION_STATUS.PAST })
     onClose?.()
-  }, [workout, sessionId, updateSession, deleteSession, onClose, onSaved])
+  }, [workout, sessionId, updateSession, deleteSession, onClose, onSaved, timer])
+
+  const dismissRpeHint = () => {
+    setShowRpeHint(false)
+    try {
+      localStorage.setItem(RPE_HINT_KEY, '1')
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const startRest = () => timer.start(settings.defaultRestSeconds ?? 90)
 
   if (!open || !workout) return null
 
@@ -122,27 +148,74 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
         <div className="ft-live__header-main">
           <div className="ft-live__header-row">
             <h2 className="ft-live__title">{t('live.title')}</h2>
-            <button
-              type="button"
-              className="ft-live__close"
-              onClick={handleClose}
-              aria-label={t('common.close')}
-            >
-              <FaIcon icon={uiIcons.close} className="ft-live__close-icon" />
-            </button>
+            <div className="ft-live__header-actions">
+              <button
+                type="button"
+                className="ft-live__rest"
+                onClick={startRest}
+                aria-label={t('live.rest')}
+              >
+                <FaIcon icon={uiIcons.timer} className="ft-live__rest-icon" />
+                <span>{formatRestTime(restSeconds)}</span>
+              </button>
+              <button
+                type="button"
+                className="ft-live__close"
+                onClick={handleClose}
+                aria-label={t('common.close')}
+              >
+                <FaIcon icon={uiIcons.close} className="ft-live__close-icon" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <div className="ft-live__body">
-        <ExerciseListEditor exercises={workout.exercises} onChange={setExercises} />
+        {showRpeHint && (
+          <div className="ft-live__rpe-hint" role="note">
+            <p className="ft-live__rpe-hint-text">
+              <strong>{t('rpe.label')}</strong> — {t('rpe.hint')}
+            </p>
+            <button type="button" className="ft-live__rpe-hint-close" onClick={dismissRpeHint}>
+              {t('common.close')}
+            </button>
+          </div>
+        )}
+
+        <ExerciseListEditor
+          exercises={workout.exercises}
+          onChange={setExercises}
+          focusMode
+          onStartRest={startRest}
+        />
       </div>
 
       <footer className="ft-live__footer">
-        <button type="button" className="ft-btn ft-btn--primary" style={{ width: '100%' }} onClick={handleFinish}>
+        <button
+          type="button"
+          className="ft-btn ft-btn--primary"
+          style={{ width: '100%' }}
+          onClick={handleFinish}
+        >
           {t('live.finish')}
         </button>
       </footer>
+
+      <RestTimerModal
+        open={timer.focused}
+        remaining={timer.remaining}
+        duration={timer.duration}
+        running={timer.running}
+        done={timer.done}
+        onReset={timer.handleReset}
+        onStart={timer.handleStart}
+        onPause={() => timer.setRunning(false)}
+        onAdd15={timer.handleAdd15}
+        onClose={timer.handleClose}
+        timeRef={timer.timeRef}
+        ringRef={timer.ringRef}
+      />
     </div>
   )
 }

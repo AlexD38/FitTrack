@@ -46,4 +46,5 @@ export const uiIcons = {
   weightHanging: faWeightHanging,
   reps: faRepeat,
   rpe: faFire,
+  timer: faStopwatch,
 }
