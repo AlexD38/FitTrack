@@ -128,6 +128,9 @@ const STRINGS = {
       moveUp: 'Monter',
       moveDown: 'Descendre',
       duration: 'Durée',
+      completedSets: 'séries complétées',
+      quickStart: 'Démarrage rapide',
+      emptyHint: 'Lance ta séance du jour ou sélectionne un programme pour commencer.',
       status: {
         past: '#passée',
         active: '#encours',
@@ -153,6 +156,10 @@ const STRINGS = {
       rest: 'Repos',
       restShort: '1:30',
       elapsed: 'Durée',
+      activeStatusBadge: 'EN COURS',
+      doneSetAria: 'Marquer la série comme terminée',
+      activeSummary: 'Séance active',
+      finishConfirm: 'Terminer et enregistrer cette séance ?',
     },
     templates: {
       title: 'Programmes',
@@ -394,6 +401,9 @@ const STRINGS = {
       moveUp: 'Move up',
       moveDown: 'Move down',
       duration: 'Duration',
+      completedSets: 'completed sets',
+      quickStart: 'Quick Start',
+      emptyHint: 'Start today’s workout or pick a program to begin logging.',
       status: {
         past: '#past',
         active: '#active',
@@ -419,6 +429,10 @@ const STRINGS = {
       rest: 'Rest',
       restShort: '1:30',
       elapsed: 'Duration',
+      activeStatusBadge: 'IN PROGRESS',
+      doneSetAria: 'Mark set as completed',
+      activeSummary: 'Active workout',
+      finishConfirm: 'Finish and save this workout?',
     },
     templates: {
       title: 'Programs',

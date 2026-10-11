@@ -44,6 +44,7 @@ function carryForwardSet(sets) {
     weight: last.weight !== '' && last.weight != null ? last.weight : 0,
     reps: last.reps !== '' && last.reps != null ? last.reps : '',
     rpe: last.rpe !== '' && last.rpe != null ? last.rpe : 5,
+    completed: false,
   })
 }
 
@@ -72,6 +73,7 @@ export function ExerciseBlock({
     if (field === 'weight') next = parseWeight(val)
     else if (field === 'reps') next = parseReps(val)
     else if (field === 'rpe') next = val === '' || val == null ? 5 : Number(val)
+    else if (field === 'completed') next = Boolean(val)
     nextSets[idx] = { ...nextSets[idx], [field]: next }
     onChange({ ...exercise, sets: nextSets })
   }
@@ -166,69 +168,96 @@ export function ExerciseBlock({
           <span className="ft-set-inline__cell ft-set-inline__cell--rpe" role="columnheader">
             {t('rpe.label')}
           </span>
+          <span className="ft-set-inline__cell ft-set-inline__cell--check" role="columnheader">
+            <span className="ft-sr-only">{t('live.markSet')}</span>
+          </span>
           <span className="ft-set-inline__cell ft-set-inline__cell--action" role="columnheader">
             <span className="ft-sr-only">{t('common.delete')}</span>
           </span>
         </div>
 
-        {sets.map((set, i) => (
-          <div key={i} className="ft-set-inline__row" role="row">
-            <span className="ft-set-inline__cell ft-set-inline__cell--num" role="cell">
-              {i + 1}
-            </span>
-            <label className="ft-set-inline__cell" role="cell">
-              <span className="ft-sr-only">{t('journal.weight')}</span>
-              <input
-                className="ft-input ft-set-inline__input"
-                type="text"
-                inputMode="decimal"
-                enterKeyHint="next"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="0"
-                value={set.weight === '' || set.weight == null ? 0 : set.weight}
-                onChange={(e) => updateSet(i, 'weight', e.target.value)}
-                aria-label={`${t('journal.setIndex')} ${i + 1} ${t('journal.weight')}`}
-              />
-            </label>
-            <label className="ft-set-inline__cell" role="cell">
-              <span className="ft-sr-only">{t('common.reps')}</span>
-              <input
-                className="ft-input ft-set-inline__input"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                enterKeyHint="done"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="—"
-                value={set.reps}
-                onChange={(e) => updateSet(i, 'reps', e.target.value)}
-                aria-label={`${t('journal.setIndex')} ${i + 1} ${t('common.reps')}`}
-              />
-            </label>
-            <div className="ft-set-inline__cell ft-set-inline__cell--rpe" role="cell">
-              <RpeCompact
-                value={set.rpe ?? 5}
-                onChange={(v) => updateSet(i, 'rpe', v)}
-                ariaLabel={`${t('journal.setIndex')} ${i + 1} ${t('rpe.label')}`}
-              />
+        {sets.map((set, i) => {
+          const isDone = Boolean(set.completed)
+          return (
+            <div
+              key={i}
+              className={`ft-set-inline__row${isDone ? ' ft-set-inline__row--done' : ''}`}
+              role="row"
+            >
+              <span className="ft-set-inline__cell ft-set-inline__cell--num" role="cell">
+                {i + 1}
+              </span>
+              <label className="ft-set-inline__cell" role="cell">
+                <span className="ft-sr-only">{t('journal.weight')}</span>
+                <input
+                  className="ft-input ft-set-inline__input"
+                  type="text"
+                  inputMode="decimal"
+                  enterKeyHint="next"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="0"
+                  value={set.weight === '' || set.weight == null ? 0 : set.weight}
+                  onChange={(e) => updateSet(i, 'weight', e.target.value)}
+                  aria-label={`${t('journal.setIndex')} ${i + 1} ${t('journal.weight')}`}
+                />
+              </label>
+              <label className="ft-set-inline__cell" role="cell">
+                <span className="ft-sr-only">{t('common.reps')}</span>
+                <input
+                  className="ft-input ft-set-inline__input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder="—"
+                  value={set.reps}
+                  onChange={(e) => updateSet(i, 'reps', e.target.value)}
+                  aria-label={`${t('journal.setIndex')} ${i + 1} ${t('common.reps')}`}
+                />
+              </label>
+              <div className="ft-set-inline__cell ft-set-inline__cell--rpe" role="cell">
+                <RpeCompact
+                  value={set.rpe ?? 5}
+                  onChange={(v) => updateSet(i, 'rpe', v)}
+                  ariaLabel={`${t('journal.setIndex')} ${i + 1} ${t('rpe.label')}`}
+                />
+              </div>
+              <div className="ft-set-inline__cell ft-set-inline__cell--check" role="cell">
+                <button
+                  type="button"
+                  className={`ft-set-inline__check${isDone ? ' ft-set-inline__check--done' : ''}`}
+                  onClick={() => {
+                    const next = !isDone
+                    updateSet(i, 'completed', next)
+                    if (next && onStartRest) {
+                      onStartRest()
+                    }
+                  }}
+                  aria-pressed={isDone}
+                  aria-label={`${t('live.doneSetAria')} ${i + 1}`}
+                >
+                  <FaIcon icon={uiIcons.check} className="ft-set-inline__check-icon" />
+                </button>
+              </div>
+              <div className="ft-set-inline__cell ft-set-inline__cell--action" role="cell">
+                <button
+                  type="button"
+                  className="ft-set-inline__remove"
+                  onClick={() => removeSetAt(i)}
+                  disabled={sets.length <= 1}
+                  aria-label={`${t('journal.removeSet')} ${i + 1}`}
+                >
+                  <FaIcon icon={uiIcons.minus} className="ft-set-inline__remove-icon" />
+                </button>
+              </div>
             </div>
-            <div className="ft-set-inline__cell ft-set-inline__cell--action" role="cell">
-              <button
-                type="button"
-                className="ft-set-inline__remove"
-                onClick={() => removeSetAt(i)}
-                disabled={sets.length <= 1}
-                aria-label={`${t('journal.removeSet')} ${i + 1}`}
-              >
-                <FaIcon icon={uiIcons.minus} className="ft-set-inline__remove-icon" />
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className={`ft-ex-block__set-actions${onStartRest ? '' : ' ft-ex-block__set-actions--single'}`}>

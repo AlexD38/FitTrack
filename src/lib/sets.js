@@ -1,6 +1,6 @@
 /** Default set: 0 kg = bodyweight allowed. */
 export function emptySet(overrides = {}) {
-  return { weight: 0, reps: '', rpe: 5, ...overrides }
+  return { weight: 0, reps: '', rpe: 5, completed: false, ...overrides }
 }
 
 /**
@@ -19,6 +19,9 @@ export function normalizeSetForSave(s) {
   const out = { weight, reps }
   if (s.rpe !== '' && s.rpe != null && !Number.isNaN(Number(s.rpe))) {
     out.rpe = Number(s.rpe)
+  }
+  if (s.completed != null) {
+    out.completed = Boolean(s.completed)
   }
   return out
 }

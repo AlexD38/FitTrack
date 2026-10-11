@@ -223,7 +223,12 @@ export function JournalPage({ onOpenSettings }) {
 
       <div ref={listRef} className="ft-journal-list">
         {listEmpty ? (
-          <EmptyState message={t('journal.empty')} />
+          <EmptyState
+            title={t('journal.quickStart')}
+            message={t('journal.emptyHint')}
+            actionLabel={t('journal.newSession')}
+            onAction={openNewSessionPicker}
+          />
         ) : (
           <>
             {pinnedActive.map((s) => (

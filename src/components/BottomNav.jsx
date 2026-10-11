@@ -15,18 +15,25 @@ export function BottomNav({ active, onChange }) {
 
   return (
     <nav className="ft-nav" aria-label="Navigation">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          className={`ft-nav__item${active === tab.id ? ' ft-nav__item--active' : ''}`}
-          onClick={() => onChange(tab.id)}
-          aria-current={active === tab.id ? 'page' : undefined}
-        >
-          <FaIcon icon={tab.icon} className="ft-nav__icon" />
-          <span>{t(tab.labelKey)}</span>
-        </button>
-      ))}
+      <div className="ft-nav__inner">
+        {TABS.map((tab) => {
+          const isActive = active === tab.id
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              className={`ft-nav__item${isActive ? ' ft-nav__item--active' : ''}`}
+              onClick={() => onChange(tab.id)}
+              aria-current={isActive ? 'page' : undefined}
+            >
+              <span className="ft-nav__icon-wrap">
+                <FaIcon icon={tab.icon} className="ft-nav__icon" />
+              </span>
+              <span className="ft-nav__label">{t(tab.labelKey)}</span>
+            </button>
+          )
+        })}
+      </div>
     </nav>
   )
 }

@@ -21,10 +21,11 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
   const status = normalizeSessionStatus(session.status)
   const visibleMuscles = muscles.slice(0, MAX_MUSCLE_CHIPS)
   const extraMuscles = Math.max(0, muscles.length - MAX_MUSCLE_CHIPS)
+  const previewExercises = (session.exercises ?? []).slice(0, 3)
 
   return (
     <article
-      className={`ft-glass ft-glass--pad ft-session-card ft-stagger-item ft-session-card--clickable${
+      className={`ft-session-card ft-stagger-item ft-session-card--clickable${
         pinned ? ' ft-session-card--pinned' : ''
       }`}
       role="button"
@@ -40,13 +41,51 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
       <div className="ft-session-card__row">
         <div className="ft-session-card__main">
           <div className="ft-session-card__title-row">
-            <p className="ft-session-card__date">{dateStr}</p>
+            <div className="ft-session-card__date-group">
+              <p className="ft-session-card__date">{dateStr}</p>
+              {session.durationSeconds > 0 && (
+                <span className="ft-session-card__duration-badge">
+                  {formatDuration(session.durationSeconds)}
+                </span>
+              )}
+            </div>
             <span className={`ft-status-tag ft-status-tag--${status}`}>{t(statusTagKey(status))}</span>
           </div>
-          <p className="ft-session-card__meta">
-            {exCount} {t('common.exercises')} · {vol.toLocaleString()} {t('common.kg')}
-            {session.durationSeconds > 0 ? ` · ${formatDuration(session.durationSeconds)}` : ''}
-          </p>
+
+          <div className="ft-session-card__metrics">
+            <span className="ft-session-card__metric-item">
+              <strong>{exCount}</strong> {t('common.exercises')}
+            </span>
+            <span className="ft-session-card__metric-sep">·</span>
+            <span className="ft-session-card__metric-item">
+              <strong>{vol.toLocaleString()}</strong> {t('common.kg')}
+            </span>
+          </div>
+
+          {previewExercises.length > 0 && (
+            <div className="ft-session-card__preview-list">
+              {previewExercises.map((ex, idx) => {
+                const setsCount = ex.sets?.length ?? 0
+                return (
+                  <div key={idx} className="ft-session-card__preview-item">
+                    <span className="ft-session-card__preview-bullet" />
+                    <span className="ft-session-card__preview-name">{ex.name || t('journal.exerciseName')}</span>
+                    {setsCount > 0 && (
+                      <span className="ft-session-card__preview-sets">
+                        {setsCount} {t('common.sets')}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+              {session.exercises?.length > 3 && (
+                <span className="ft-session-card__preview-more">
+                  +{session.exercises.length - 3} {t('common.exercises')}
+                </span>
+              )}
+            </div>
+          )}
+
           {visibleMuscles.length > 0 && (
             <div className="ft-session-card__chips">
               {visibleMuscles.map((m) => (
@@ -64,6 +103,7 @@ export function SessionCard({ session, pinned = false, onOpen, onReplay, onDelet
             </div>
           )}
         </div>
+
         {onDelete && (
           <button
             type="button"
