@@ -3031,22 +3031,27 @@
 .ft-ex-block__reorder {
   display: inline-flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 0.2rem;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .ft-ex-block__reorder-btn {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 2rem;
-  height: 1.35rem;
+  height: 1.25rem;
   padding: 0;
+  overflow: hidden;
+  line-height: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-surface);
-  color: var(--color-ink-muted, var(--color-ink));
+  color: var(--color-ink-muted);
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .ft-ex-block__reorder-btn:disabled {
@@ -3060,13 +3065,23 @@
 }
 
 .ft-ex-block__reorder-icon {
-  width: 0.75rem;
-  height: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.7rem;
+  height: 0.7rem;
+  flex-shrink: 0;
+  overflow: hidden;
+  line-height: 0;
 }
 
 .ft-ex-block__reorder-icon svg {
-  width: 100%;
-  height: 100%;
+  display: block;
+  width: 0.7rem;
+  height: 0.7rem;
+  max-width: 100%;
+  max-height: 100%;
+  fill: currentColor;
 }
 
 .ft-ex-block__name {
