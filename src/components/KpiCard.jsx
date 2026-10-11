@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { animate } from 'animejs'
+import { GlassCard } from './GlassCard'
 
 export function KpiCard({ label, value, sub }) {
   const valueRef = useRef(null)
@@ -24,14 +25,12 @@ export function KpiCard({ label, value, sub }) {
   }, [value])
 
   return (
-    <div className="ft-kpi">
+    <GlassCard className="ft-kpi">
       <p className="ft-kpi__label">{label}</p>
-      <div className="ft-kpi__value-row">
-        <p className="ft-kpi__value" ref={valueRef}>
-          {typeof value === 'number' ? '0' : value}
-        </p>
-        {sub && <span className="ft-kpi__sub">{sub}</span>}
-      </div>
-    </div>
+      <p className="ft-kpi__value" ref={valueRef}>
+        {typeof value === 'number' ? '0' : value}
+      </p>
+      {sub && <p className="ft-kpi__sub">{sub}</p>}
+    </GlassCard>
   )
 }

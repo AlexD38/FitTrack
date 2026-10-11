@@ -9,8 +9,6 @@ import { BottomSheet } from '../components/BottomSheet'
 import { WeightForm } from '../components/WeightForm'
 import { WeightTrendChart } from '../components/charts/WeightTrendChart'
 import { GlassCard } from '../components/GlassCard'
-import { FaIcon } from '../components/FaIcon'
-import { uiIcons } from '../lib/icons'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
 import { weightSeries, weightDelta } from '../lib/stats'
@@ -160,11 +158,11 @@ export function WeightPage({ onOpenSettings }) {
                     </div>
                     <button
                       type="button"
-                      className="ft-session-card__icon-btn"
+                      className="ft-btn ft-btn--ghost"
                       onClick={() => deleteWeightEntry(entry.id)}
                       aria-label={t('common.delete')}
                     >
-                      <FaIcon icon={uiIcons.trash} className="ft-session-card__icon-btn-icon" />
+                      ✕
                     </button>
                   </div>
                 </GlassCard>

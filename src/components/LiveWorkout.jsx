@@ -25,7 +25,6 @@ function buildLiveState(payload) {
         weight: s.weight === '' || s.weight == null ? 0 : s.weight,
         reps: s.reps ?? '',
         rpe: s.rpe ?? 5,
-        completed: Boolean(s.completed),
       })),
     })),
   }
@@ -42,7 +41,6 @@ function toPersistPayload(workout, { requireSets }) {
             weight: s.weight === '' || s.weight == null ? 0 : s.weight,
             reps: s.reps ?? '',
             rpe: s.rpe === '' || s.rpe == null ? 5 : s.rpe,
-            completed: Boolean(s.completed),
           })),
     }))
     .filter((ex) => (requireSets ? ex.sets.length > 0 : true))
@@ -167,12 +165,6 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
 
   const startRest = () => timer.start(settings.defaultRestSeconds ?? 90)
 
-  const totalSets = (workout?.exercises ?? []).reduce((acc, ex) => acc + (ex.sets?.length ?? 0), 0)
-  const completedSets = (workout?.exercises ?? []).reduce(
-    (acc, ex) => acc + (ex.sets ?? []).filter((s) => s.completed).length,
-    0,
-  )
-
   if (!open || !workout) return null
 
   return (
@@ -181,21 +173,10 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
         <div className="ft-live__header-main">
           <div className="ft-live__header-row">
             <div className="ft-live__title-wrap">
-              <div className="ft-live__badge-row">
-                <span className="ft-live__pulse-dot" aria-hidden="true" />
-                <span className="ft-live__badge">{t('live.activeStatusBadge')}</span>
-              </div>
               <h2 className="ft-live__title">{t('live.title')}</h2>
-              <div className="ft-live__meta-row">
-                <p className="ft-live__elapsed" aria-live="polite">
-                  {formatDuration(elapsed)}
-                </p>
-                {totalSets > 0 && (
-                  <span className="ft-live__sets-counter">
-                    · {completedSets}/{totalSets} {t('journal.completedSets')}
-                  </span>
-                )}
-              </div>
+              <p className="ft-live__elapsed" aria-live="polite">
+                {formatDuration(elapsed)}
+              </p>
             </div>
             <div className="ft-live__header-actions">
               <button
