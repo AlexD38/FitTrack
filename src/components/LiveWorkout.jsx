@@ -69,6 +69,7 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   })
   const workoutRef = useRef(null)
   const sessionIdRef = useRef(sessionId)
+  const finishingRef = useRef(false)
   const restSeconds = settings.defaultRestSeconds ?? 90
   const timer = useRestTimer(restSeconds)
 
@@ -82,6 +83,7 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
 
   useEffect(() => {
     if (!open || !initial || !sessionId) return
+    finishingRef.current = false
     const startedAt = initial.startedAt || new Date().toISOString()
     const next = buildLiveState({ ...initial, startedAt })
     setWorkout(next)
@@ -114,6 +116,11 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   }, [updateSession])
 
   const handleClose = useCallback(() => {
+    // Don't re-persist as #encours after a successful finish.
+    if (finishingRef.current) {
+      onClose?.()
+      return
+    }
     timer.handleClose()
     persistActive()
     onClose?.()
@@ -133,7 +140,8 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   }
 
   const handleFinish = useCallback(() => {
-    if (!workout || !sessionId) return
+    if (!workout || !sessionId || finishingRef.current) return
+    finishingRef.current = true
     timer.handleClose()
     const cleaned = toPersistPayload(workout, { requireSets: true })
     if (cleaned.exercises.length === 0) {

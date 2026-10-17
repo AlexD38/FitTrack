@@ -16,7 +16,6 @@ import { useLocale } from '../contexts/LocaleContext'
 import {
   pastSessionsOnly,
   SESSION_STATUS,
-  findActiveSession,
   normalizeSessionStatus,
   resolveSessionStatus,
   isActiveSession,
@@ -29,9 +28,17 @@ import { uiIcons } from '../lib/icons'
 const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
 
 export function JournalPage({ onOpenSettings }) {
-  const { sessions, addSession, updateSession, deleteSession, cloneSessionPayload } = useFitness()
+  const {
+    sessions,
+    addSession,
+    updateSession,
+    deleteSession,
+    beginLiveSession,
+    cloneSessionPayload,
+  } = useFitness()
   const { t } = useLocale()
   const listRef = useRef(null)
+  const startingRef = useRef(false)
 
   const [sheet, setSheet] = useState(null)
   const [liveId, setLiveId] = useState(null)
@@ -106,36 +113,27 @@ export function JournalPage({ onOpenSettings }) {
   }
 
   const openLiveById = useCallback((id) => {
+    if (!id) return
     setLiveId(id)
   }, [])
 
   const startOrResumeLive = useCallback(
     (payload, { existingId, replaceActive = false } = {}) => {
-      const active = findActiveSession(sessions)
-      if (active && !replaceActive && (!existingId || active.id !== existingId)) {
-        openLiveById(active.id)
-        return
-      }
-      if (active && replaceActive && active.id !== existingId) {
-        updateSession(active.id, { status: SESSION_STATUS.PAST })
-      }
-      if (existingId) {
-        updateSession(existingId, {
-          ...payload,
-          status: SESSION_STATUS.ACTIVE,
-          startedAt: payload.startedAt ?? new Date().toISOString(),
+      // Guard against double-taps creating two live sessions in one gesture.
+      if (startingRef.current) return
+      startingRef.current = true
+      try {
+        const id = beginLiveSession(payload, { existingId, replaceActive })
+        openLiveById(id)
+      } finally {
+        // Release on next tick so a second click in the same frame is ignored,
+        // but a later intentional start still works.
+        queueMicrotask(() => {
+          startingRef.current = false
         })
-        openLiveById(existingId)
-        return
       }
-      const id = addSession({
-        ...payload,
-        status: SESSION_STATUS.ACTIVE,
-        startedAt: payload.startedAt ?? new Date().toISOString(),
-      })
-      openLiveById(id)
     },
-    [sessions, addSession, updateSession, openLiveById],
+    [beginLiveSession, openLiveById],
   )
 
   const handlePrimaryAction = (session) => {
@@ -145,13 +143,16 @@ export function JournalPage({ onOpenSettings }) {
       return
     }
     closeSheet()
-    startOrResumeLive(
-      {
-        ...cloneSessionPayload(session, todayIsoDate()),
-        status: SESSION_STATUS.ACTIVE,
-      },
-      { replaceActive: true },
-    )
+    const payload = {
+      ...cloneSessionPayload(session, todayIsoDate()),
+      status: SESSION_STATUS.ACTIVE,
+    }
+    // Upcoming: promote the same card in place (no clone).
+    // Past: Relancer creates a new session so history stays intact.
+    startOrResumeLive(payload, {
+      existingId: status === SESSION_STATUS.UPCOMING ? session.id : undefined,
+      replaceActive: true,
+    })
   }
 
   const blankLivePayload = () => ({

@@ -1,8 +1,21 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 
 import { DEFAULT_PALETTE, isValidPalette } from '../lib/palettes'
-import { SESSION_STATUS, sortSessionsByStatus, withSessionStatus } from '../lib/sessionStatus'
+import {
+  SESSION_STATUS,
+  findActiveSession,
+  sortSessionsByStatus,
+  withSessionStatus,
+} from '../lib/sessionStatus'
 
 export const STORAGE_KEY = 'fitness-v1'
 
@@ -77,6 +90,8 @@ const FitnessContext = createContext(null)
 
 export function FitnessProvider({ children }) {
   const [state, setState] = useState(loadState)
+  const stateRef = useRef(state)
+  stateRef.current = state
 
   useEffect(() => {
     try {
@@ -114,6 +129,69 @@ export function FitnessProvider({ children }) {
       ...prev,
       sessions: prev.sessions.filter((s) => s.id !== id),
     }))
+  }, [])
+
+  /**
+   * Atomically open a live workout:
+   * - resume the existing #encours when replaceActive is false
+   * - promote an upcoming session in place when existingId is set
+   * - otherwise create one new active session
+   * Abandoned unfinished #encours are removed (not archived) when replaced,
+   * so Relancer / new starts don't leave ghost past duplicates.
+   */
+  const beginLiveSession = useCallback((payload, { existingId, replaceActive = false } = {}) => {
+    const startedAt = payload.startedAt ?? new Date().toISOString()
+    const active = findActiveSession(stateRef.current.sessions)
+
+    if (active && !replaceActive && (!existingId || active.id !== existingId)) {
+      return active.id
+    }
+
+    const dropActiveId =
+      active && replaceActive && active.id !== existingId ? active.id : null
+
+    if (existingId) {
+      setState((prev) => {
+        let sessions = prev.sessions
+        if (dropActiveId) sessions = sessions.filter((s) => s.id !== dropActiveId)
+        const exists = sessions.some((s) => s.id === existingId)
+        if (!exists) return prev
+        return {
+          ...prev,
+          sessions: sessions.map((s) =>
+            s.id === existingId
+              ? withSessionStatus({
+                  ...s,
+                  ...payload,
+                  status: SESSION_STATUS.ACTIVE,
+                  startedAt: payload.startedAt ?? s.startedAt ?? startedAt,
+                })
+              : s,
+          ),
+        }
+      })
+      return existingId
+    }
+
+    const liveId = uid('session')
+    const next = withSessionStatus({
+      ...payload,
+      id: liveId,
+      status: SESSION_STATUS.ACTIVE,
+      startedAt,
+    })
+    setState((prev) => {
+      let sessions = prev.sessions
+      const activeNow = findActiveSession(sessions)
+      if (activeNow && activeNow.id !== liveId) {
+        // Always drop an unfinished #encours when creating a new live session
+        // from this path — callers either passed replaceActive or there was none
+        // at decision time. Never archive it as a ghost #passée duplicate.
+        sessions = sessions.filter((s) => s.id !== activeNow.id)
+      }
+      return { ...prev, sessions: [next, ...sessions] }
+    })
+    return liveId
   }, [])
 
   const duplicateSession = useCallback((session) => {
@@ -213,6 +291,7 @@ export function FitnessProvider({ children }) {
       addSession,
       updateSession,
       deleteSession,
+      beginLiveSession,
       duplicateSession,
       cloneSessionPayload,
       addWeightEntry,
@@ -229,6 +308,7 @@ export function FitnessProvider({ children }) {
       addSession,
       updateSession,
       deleteSession,
+      beginLiveSession,
       duplicateSession,
       addWeightEntry,
       deleteWeightEntry,
