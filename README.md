@@ -21,6 +21,8 @@ npm install
 npm run dev
 ```
 
+L’app tourne sur [http://localhost:3000](http://localhost:3000).
+
 ## Build
 
 ```bash
