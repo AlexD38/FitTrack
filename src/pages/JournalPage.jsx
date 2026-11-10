@@ -23,8 +23,6 @@ import {
   reopenPayload,
   todayIsoDate,
 } from '../lib/sessionStatus'
-import { format, parseISO } from 'date-fns'
-import { fr, enUS } from 'date-fns/locale'
 import { PROGRAM_TEMPLATES, templateToSession } from '../lib/templates'
 import { emptySet } from '../lib/sets'
 import { musclesFromExerciseNames } from '../lib/exercises'
@@ -33,85 +31,30 @@ import { uiIcons } from '../lib/icons'
 
 const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
 
-function exerciseNamesPreview(session, max = 3) {
-  const names = (session?.exercises ?? []).map((e) => e.name?.trim()).filter(Boolean)
-  if (!names.length) return ''
-  const shown = names.slice(0, max).join(' · ')
-  return names.length > max ? `${shown} +${names.length - max}` : shown
-}
-
-function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat, onFree, onTemplate, onMore }) {
+/** Ways to start a new session; existing sessions (in progress, planned, past) live in the list below. */
+function NewSessionCard({ onFree, onTemplate, onMore }) {
   const { locale, t } = useLocale()
-  const dateLocale = locale === 'fr' ? fr : enUS
-  const lastIsToday = Boolean(last && isReopenableToday(last))
-
-  let primary = null
-  if (active) {
-    primary = {
-      kind: 'resume',
-      title: t('journal.quickResume'),
-      meta: exerciseNamesPreview(active) || t('live.title'),
-      onClick: onResume,
-    }
-  } else if (planned) {
-    primary = {
-      kind: 'planned',
-      title: t('journal.quickPlanned'),
-      meta: exerciseNamesPreview(planned),
-      onClick: onStartPlanned,
-    }
-  } else if (last) {
-    primary = {
-      kind: lastIsToday ? 'reopen' : 'repeat',
-      title: lastIsToday ? t('journal.quickResumeToday') : t('journal.quickRepeat'),
-      meta: [format(parseISO(last.date), 'EEE d MMM', { locale: dateLocale }), exerciseNamesPreview(last)]
-        .filter(Boolean)
-        .join(' — '),
-      onClick: onRepeat,
-    }
-  }
 
   return (
     <section className="ft-quick ft-glass ft-glass--pad" aria-labelledby="ft-quick-title">
       <h2 id="ft-quick-title" className="ft-section__title">
         {t('journal.newSession')}
       </h2>
-      {primary && (
-        <button type="button" className="ft-quick__primary" onClick={primary.onClick}>
-          <span className="ft-quick__primary-icon" aria-hidden="true">
-            <FaIcon icon={primary.kind === 'repeat' ? uiIcons.redo : uiIcons.play} />
-          </span>
-          <span className="ft-quick__primary-text">
-            <span className="ft-quick__primary-title">{primary.title}</span>
-            {primary.meta && <span className="ft-quick__primary-meta">{primary.meta}</span>}
-          </span>
-        </button>
-      )}
       <div className="ft-quick__chips">
-        {!active && (
-          <>
-            {last && primary?.kind === 'planned' && (
-              <button type="button" className="ft-chip ft-quick__chip" onClick={onRepeat}>
-                <FaIcon icon={lastIsToday ? uiIcons.play : uiIcons.redo} className="ft-quick__chip-icon" />
-                {lastIsToday ? t('journal.quickResumeToday') : t('journal.quickRepeat')}
-              </button>
-            )}
-            <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
-              <FaIcon icon={uiIcons.add} className="ft-quick__chip-icon" />
-              {t('journal.quickFree')}
-            </button>
-            {PROGRAM_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.id}
-                type="button"
-                className="ft-chip ft-quick__chip"
-                onClick={() => onTemplate(templateToSession(tpl, locale))}
-              >
-                {t(`templates.${tpl.id}`)}
-              </button>
-            ))}
-          </>
-        )}
+        <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
+          <FaIcon icon={uiIcons.add} className="ft-quick__chip-icon" />
+          {t('journal.quickFree')}
+        </button>
+        {PROGRAM_TEMPLATES.map((tpl) => (
+          <button
+            key={tpl.id}
+            type="button"
+            className="ft-chip ft-quick__chip"
+            onClick={() => onTemplate(templateToSession(tpl, locale))}
+          >
+            {t(`templates.${tpl.id}`)}
+          </button>
+        ))}
         <button type="button" className="ft-chip ft-quick__chip ft-quick__chip--more" onClick={onMore}>
           {t('journal.quickMore')}
         </button>
@@ -159,15 +102,6 @@ export function JournalPage({ onOpenSettings, intent }) {
   const listEmpty = pinnedActive.length === 0 && filteredSessions.length === 0
 
   const activeSession = useMemo(() => findActiveSession(sessions), [sessions])
-  const lastPast = useMemo(() => pastSessionsOnly(sessions)[0] ?? null, [sessions])
-  const plannedToday = useMemo(() => {
-    const today = todayIsoDate()
-    return (
-      sessions.find(
-        (s) => resolveSessionStatus(s) === SESSION_STATUS.UPCOMING && s.date === today,
-      ) ?? null
-    )
-  }, [sessions])
 
   const liveSession = useMemo(
     () => (liveId ? sessions.find((s) => s.id === liveId) : null),
@@ -313,17 +247,14 @@ export function JournalPage({ onOpenSettings, intent }) {
     <>
       <PageHeader title={t('journal.title')} actions={<SettingsButton onClick={onOpenSettings} />} />
 
-      <QuickStart
-        active={activeSession}
-        planned={plannedToday}
-        last={lastPast}
-        onResume={() => activeSession && openLiveById(activeSession.id)}
-        onStartPlanned={() => plannedToday && handlePrimaryAction(plannedToday)}
-        onRepeat={() => lastPast && handlePrimaryAction(lastPast)}
-        onFree={() => startOrResumeLive(blankLivePayload(), { replaceActive: true })}
-        onTemplate={(payload) => startOrResumeLive(payload, { replaceActive: true })}
-        onMore={openNewSessionPicker}
-      />
+      {/* Starting another session would replace the one in progress, which the list already offers to resume. */}
+      {!activeSession && (
+        <NewSessionCard
+          onFree={() => startOrResumeLive(blankLivePayload())}
+          onTemplate={(payload) => startOrResumeLive(payload)}
+          onMore={openNewSessionPicker}
+        />
+      )}
 
       <h2 className="ft-quick__title ft-quick__title--history">{t('journal.history')}</h2>
       <div className="ft-journal-filters" role="tablist" aria-label={t('journal.filterStatus')}>
