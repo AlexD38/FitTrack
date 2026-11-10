@@ -104,7 +104,7 @@ export function ExerciseBlock({
     const nowDone = !sets[idx].done
     const nextSets = sets.map((s, i) => (i === idx ? { ...s, done: nowDone } : s))
     onChange({ ...exercise, sets: nextSets })
-    if (nowDone) onSetDone?.({ allDone: nextSets.every((s) => s.done) })
+    if (nowDone) onSetDone?.()
   }
 
   const addSet = () => {
@@ -372,14 +372,7 @@ export function ExerciseListEditor({
     setActiveIndex(next.length - 1)
   }
 
-  const handleSetDone = (idx, { allDone }) => {
-    onSetDone?.()
-    if (!allDone || !focusMode) return
-    const isPending = (ex) => (ex.sets ?? []).some((s) => !s.done)
-    const after = list.findIndex((ex, i) => i > idx && isPending(ex))
-    const next = after !== -1 ? after : list.findIndex((ex, i) => i !== idx && isPending(ex))
-    if (next !== -1) setActiveIndex(next)
-  }
+  const handleSetDone = () => onSetDone?.()
 
   const moveAt = (idx, dir) => {
     const target = idx + dir
@@ -406,7 +399,7 @@ export function ExerciseListEditor({
             onMoveUp={list.length > 1 && i > 0 ? () => moveAt(i, -1) : undefined}
             onMoveDown={list.length > 1 && i < list.length - 1 ? () => moveAt(i, 1) : undefined}
             trackDone={trackDone}
-            onSetDone={(info) => handleSetDone(i, info)}
+            onSetDone={handleSetDone}
           />
         ))}
       </div>

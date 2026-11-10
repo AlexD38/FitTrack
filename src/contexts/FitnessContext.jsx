@@ -161,10 +161,14 @@ export function FitnessProvider({ children }) {
       return active.id
     }
 
-    // New sessions start from last time's weight/reps; a planned session keeps values already set.
+    // New sessions show one set per exercise (more are added as copies), prefilled from last time;
+    // a planned or reopened session keeps its sets and values.
+    const exercises = existingId
+      ? rawPayload.exercises
+      : (rawPayload.exercises ?? []).map((ex) => ({ ...ex, sets: (ex.sets ?? []).slice(0, 1) }))
     const payload = {
       ...rawPayload,
-      exercises: withLastPerformance(rawPayload.exercises, stateRef.current.sessions, {
+      exercises: withLastPerformance(exercises, stateRef.current.sessions, {
         onlyEmpty: Boolean(existingId),
       }),
     }
