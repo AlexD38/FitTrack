@@ -13,8 +13,8 @@ function isLogged(set) {
   return Number(set.weight) > 0 || Number(set.reps) > 0
 }
 
-/** Sets of `name` in the most recent finished session that logged it, or null. */
-export function lastExerciseSets(sessions, name) {
+/** The exercise entry for `name` in the most recent finished session that logged it, or null. */
+function lastExercise(sessions, name) {
   if (!name?.trim()) return null
   const key = exerciseKey(name)
   const past = (sessions ?? []).filter(isPastSession).sort(byMostRecent)
@@ -22,9 +22,14 @@ export function lastExerciseSets(sessions, name) {
     const ex = (session.exercises ?? []).find(
       (e) => exerciseKey(e.name) === key && (e.sets ?? []).some(isLogged),
     )
-    if (ex) return ex.sets
+    if (ex) return ex
   }
   return null
+}
+
+/** Sets of `name` in the most recent finished session that logged it, or null. */
+export function lastExerciseSets(sessions, name) {
+  return lastExercise(sessions, name)?.sets ?? null
 }
 
 /** Same set index from last time; extra sets reuse the last set's value. */
@@ -39,10 +44,14 @@ function valueAt(prevSets, idx, field) {
  */
 export function withLastPerformance(exercises, sessions, { onlyEmpty = false } = {}) {
   return (exercises ?? []).map((ex) => {
-    const prev = lastExerciseSets(sessions, ex.name)
-    if (!prev) return ex
+    const prevExercise = lastExercise(sessions, ex.name)
+    if (!prevExercise) return ex
+    const prev = prevExercise.sets
+    const bodyweight =
+      typeof ex.bodyweight === 'boolean' ? ex.bodyweight : prevExercise.bodyweight
     return {
       ...ex,
+      ...(typeof bodyweight === 'boolean' ? { bodyweight } : {}),
       sets: (ex.sets ?? []).map((s, i) => {
         if (s.done) return s
         let next = s

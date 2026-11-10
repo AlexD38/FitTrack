@@ -122,6 +122,7 @@ const STRINGS = {
       exerciseActions: 'Actions de l’exercice',
       weight: 'Poids',
       bodyweight: 'PDC',
+      bodyweightHint: 'Poids du corps : le poids saisi devient une charge ajoutée (lest)',
       empty: 'Aucune séance enregistrée. Commencez par ajouter votre première séance !',
       deleteConfirm: 'Supprimer cette séance ?',
       finishPending:
@@ -406,6 +407,7 @@ const STRINGS = {
       exerciseActions: 'Exercise actions',
       weight: 'Weight',
       bodyweight: 'BW',
+      bodyweightHint: 'Bodyweight: the weight you enter becomes added load',
       empty: 'No sessions yet. Start by logging your first workout!',
       deleteConfirm: 'Delete this session?',
       finishPending:

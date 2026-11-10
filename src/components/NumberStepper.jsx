@@ -45,6 +45,7 @@ export function NumberStepper({
   valueStyle,
   size = 'md',
   editable = true,
+  format,
 }) {
   const numeric = toNumber(value, emptyAs)
   const [editing, setEditing] = useState(false)
@@ -173,9 +174,13 @@ export function NumberStepper({
           style={valueStyle}
           onClick={startEditing}
           aria-live="polite"
-          aria-label={ariaLabel ? `${ariaLabel}: ${formatValue(numeric, step)}` : undefined}
+          aria-label={
+            ariaLabel
+              ? `${ariaLabel}: ${format ? format(numeric, formatValue(numeric, step)) : formatValue(numeric, step)}`
+              : undefined
+          }
         >
-          {formatValue(numeric, step)}
+          {format ? format(numeric, formatValue(numeric, step)) : formatValue(numeric, step)}
         </button>
       )}
       <button

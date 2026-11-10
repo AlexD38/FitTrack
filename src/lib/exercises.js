@@ -201,6 +201,15 @@ export function findLibraryExercise(name) {
   return LOOKUP.get(name.trim().toLowerCase())?.entry ?? null
 }
 
+/**
+ * Weight counts as added load on top of bodyweight (PDC). Explicit `bodyweight` on the
+ * exercise wins; otherwise the library's bodyweight variants default to it.
+ */
+export function isBodyweightExercise(exercise) {
+  if (typeof exercise?.bodyweight === 'boolean') return exercise.bodyweight
+  return findLibraryExercise(exercise?.name)?.equipment === 'bodyweight'
+}
+
 /** Stable identity for history matching: library id when known, else the normalized name. */
 export function exerciseKey(name) {
   return findLibraryExercise(name)?.id ?? (name ?? '').trim().toLowerCase()

@@ -3552,6 +3552,33 @@
   color: var(--color-ink-muted);
 }
 
+.ft-ex-block__bw {
+  flex-shrink: 0;
+  height: 2rem;
+  margin-top: -0.125rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-ink-muted);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.ft-ex-block__bw--on {
+  border-color: transparent;
+  background: var(--color-accent-2);
+  color: var(--color-on-accent);
+}
+
+.ft-ex-block__bw:active {
+  transform: scale(0.95);
+}
+
 .ft-ex-block__more {
   display: inline-flex;
   align-items: center;

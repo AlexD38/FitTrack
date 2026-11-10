@@ -8,6 +8,7 @@ import { NumberStepper } from './NumberStepper'
 import { BottomSheet } from './BottomSheet'
 import { emptySet } from '../lib/sets'
 import { withLastPerformance } from '../lib/lastPerformance'
+import { findLibraryExercise, isBodyweightExercise } from '../lib/exercises'
 import { uiIcons } from '../lib/icons'
 
 const WEIGHT_STEP = 2.5
@@ -18,8 +19,15 @@ export function createEmptyExercise() {
   return { name: '', sets: [emptySet()] }
 }
 
+/** `PDC`, `PDC +10 kg` or `80 kg`. */
+function formatSetWeight(weight, bodyweight, t) {
+  const w = Number(weight) || 0
+  if (!bodyweight) return `${w} ${t('common.kg')}`
+  return w > 0 ? `${t('journal.bodyweight')} +${w} ${t('common.kg')}` : t('journal.bodyweight')
+}
+
 /** Honest set summary for glanceable previews: `3× 80 kg · RPE 7`. */
-export function formatSetSummary(sets, t) {
+export function formatSetSummary(sets, t, bodyweight = false) {
   const list = sets?.length ? sets : []
   if (!list.length) return `0 ${t('common.sets')}`
   const count = list.length
@@ -28,7 +36,7 @@ export function formatSetSummary(sets, t) {
   const weight = sample?.weight === '' || sample?.weight == null ? 0 : sample.weight
   const reps = sample?.reps === '' || sample?.reps == null ? '—' : sample.reps
   const rpe = sample?.rpe === '' || sample?.rpe == null ? 5 : sample.rpe
-  return `${count}× ${weight} ${t('common.kg')} · ${reps} ${t('common.reps')} · ${t('rpe.label')} ${rpe}`
+  return `${count}× ${formatSetWeight(weight, bodyweight, t)} · ${reps} ${t('common.reps')} · ${t('rpe.label')} ${rpe}`
 }
 
 function carryForwardSet(sets) {
@@ -61,9 +69,14 @@ export function ExerciseBlock({
   const sets = exercise.sets?.length ? exercise.sets : [emptySet()]
   const displayName = exercise.name?.trim() || t('journal.exerciseName')
   const emptyName = !exercise.name?.trim()
+  const bodyweight = isBodyweightExercise(exercise)
+
+  const toggleBodyweight = () => onChange({ ...exercise, bodyweight: !bodyweight })
 
   const updateName = (name) => {
     const renamed = { ...exercise, name }
+    // A library exercise brings its own default (bodyweight variants → PDC); custom names keep the toggle.
+    if (findLibraryExercise(name)) delete renamed.bodyweight
     onChange(trackDone ? withLastPerformance([renamed], sessions, { onlyEmpty: true })[0] : renamed)
   }
 
@@ -113,7 +126,7 @@ export function ExerciseBlock({
             <span className={`ft-ex-block__name-text${emptyName ? ' ft-ex-block__name--empty' : ''}`}>
               {displayName}
             </span>
-            <span className="ft-ex-block__summary">{formatSetSummary(sets, t)}</span>
+            <span className="ft-ex-block__summary">{formatSetSummary(sets, t, bodyweight)}</span>
           </span>
           {trackDone && (
             <span className={`ft-ex-block__progress${allDone ? ' ft-ex-block__progress--done' : ''}`}>
@@ -146,6 +159,15 @@ export function ExerciseBlock({
               ? `${doneCount}/${sets.length} ${t('common.sets')}`
               : `${sets.length} ${t('common.sets')}`}
           </span>
+        </button>
+        <button
+          type="button"
+          className={`ft-ex-block__bw${bodyweight ? ' ft-ex-block__bw--on' : ''}`}
+          onClick={toggleBodyweight}
+          aria-pressed={bodyweight}
+          title={t('journal.bodyweightHint')}
+        >
+          {t('journal.bodyweight')}
         </button>
         {hasMenu && (
           <button
@@ -194,7 +216,7 @@ export function ExerciseBlock({
       >
         <div className="ft-set-inline__head" aria-hidden="true">
           <span>{t('journal.setShort')}</span>
-          <span>{t('common.kg')}</span>
+          <span>{bodyweight ? `${t('journal.bodyweight')} + ${t('common.kg')}` : t('common.kg')}</span>
           <span>{t('common.reps')}</span>
           {trackDone && <span />}
         </div>
@@ -218,6 +240,7 @@ export function ExerciseBlock({
                   min={0}
                   max={WEIGHT_MAX}
                   ariaLabel={`${setLabel} ${t('journal.weight')}`}
+                  format={bodyweight ? (w, text) => (w > 0 ? `+${text}` : t('journal.bodyweight')) : undefined}
                   size="sm"
                 />
                 <NumberStepper

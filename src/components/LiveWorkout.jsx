@@ -21,6 +21,7 @@ function buildLiveState(payload) {
     startedAt: payload.startedAt ?? null,
     exercises: (payload.exercises ?? []).map((ex) => ({
       name: ex.name,
+      ...(typeof ex.bodyweight === 'boolean' ? { bodyweight: ex.bodyweight } : {}),
       sets: (ex.sets ?? []).map((s) => ({
         weight: s.weight === '' || s.weight == null ? 0 : s.weight,
         reps: s.reps ?? '',
@@ -48,6 +49,7 @@ function toPersistPayload(workout, { requireSets }) {
     .filter((ex) => ex.name?.trim())
     .map((ex) => ({
       name: ex.name.trim(),
+      ...(typeof ex.bodyweight === 'boolean' ? { bodyweight: ex.bodyweight } : {}),
       sets: requireSets
         ? normalizeSetsForSave(ex.sets)
         : (ex.sets ?? []).map((s) => ({
