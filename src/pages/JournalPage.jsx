@@ -23,45 +23,12 @@ import {
   reopenPayload,
   todayIsoDate,
 } from '../lib/sessionStatus'
-import { PROGRAM_TEMPLATES, templateToSession } from '../lib/templates'
 import { emptySet } from '../lib/sets'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { formatDuration } from '../lib/duration'
 import { uiIcons } from '../lib/icons'
 
 const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
-
-/** Ways to start a new session; existing sessions (in progress, planned, past) live in the list below. */
-function NewSessionCard({ onFree, onTemplate, onMore }) {
-  const { locale, t } = useLocale()
-
-  return (
-    <section className="ft-quick ft-glass ft-glass--pad" aria-labelledby="ft-quick-title">
-      <h2 id="ft-quick-title" className="ft-section__title">
-        {t('journal.newSession')}
-      </h2>
-      <div className="ft-quick__chips">
-        <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
-          <FaIcon icon={uiIcons.add} className="ft-quick__chip-icon" />
-          {t('journal.quickFree')}
-        </button>
-        {PROGRAM_TEMPLATES.map((tpl) => (
-          <button
-            key={tpl.id}
-            type="button"
-            className="ft-chip ft-quick__chip"
-            onClick={() => onTemplate(templateToSession(tpl, locale))}
-          >
-            {t(`templates.${tpl.id}`)}
-          </button>
-        ))}
-        <button type="button" className="ft-chip ft-quick__chip ft-quick__chip--more" onClick={onMore}>
-          {t('journal.quickMore')}
-        </button>
-      </div>
-    </section>
-  )
-}
 
 export function JournalPage({ onOpenSettings, intent }) {
   const {
@@ -249,11 +216,10 @@ export function JournalPage({ onOpenSettings, intent }) {
 
       {/* Starting another session would replace the one in progress, which the list already offers to resume. */}
       {!activeSession && (
-        <NewSessionCard
-          onFree={() => startOrResumeLive(blankLivePayload())}
-          onTemplate={(payload) => startOrResumeLive(payload)}
-          onMore={openNewSessionPicker}
-        />
+        <button type="button" className="ft-btn ft-btn--primary ft-new-session" onClick={openNewSessionPicker}>
+          <FaIcon icon={uiIcons.add} className="ft-new-session__icon" />
+          {t('journal.newSession')}
+        </button>
       )}
 
       <h2 className="ft-quick__title ft-quick__title--history">{t('journal.history')}</h2>
