@@ -229,6 +229,12 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
             </div>
           </div>
         </div>
+        <div className="ft-live__bar" aria-hidden="true">
+          <span
+            className="ft-live__bar-fill"
+            style={{ transform: `scaleX(${progress.total ? progress.done / progress.total : 0})` }}
+          />
+        </div>
       </header>
 
       <div className="ft-live__body">

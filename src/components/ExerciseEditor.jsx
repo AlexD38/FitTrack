@@ -54,6 +54,7 @@ export function ExerciseBlock({
 }) {
   const { t } = useLocale()
   const [nameOpen, setNameOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const sets = exercise.sets?.length ? exercise.sets : [emptySet()]
   const displayName = exercise.name?.trim() || t('journal.exerciseName')
   const emptyName = !exercise.name?.trim()
@@ -102,9 +103,6 @@ export function ExerciseBlock({
     return (
       <section className={`ft-ex-block ft-ex-block--collapsed${allDone ? ' ft-ex-block--complete' : ''}`}>
         <button type="button" className="ft-ex-block__collapsed" onClick={onExpand}>
-          <span className="ft-ex-block__icon-wrap" aria-hidden="true">
-            <FaIcon icon={uiIcons.dumbbell} className="ft-ex-block__icon" />
-          </span>
           <span className="ft-ex-block__collapsed-text">
             <span className={`ft-ex-block__name-text${emptyName ? ' ft-ex-block__name--empty' : ''}`}>
               {displayName}
@@ -122,6 +120,9 @@ export function ExerciseBlock({
     )
   }
 
+  const doneCount = trackDone ? sets.filter((s) => s.done).length : 0
+  const hasMenu = Boolean(onMoveUp || onMoveDown || onRemove)
+
   return (
     <section className="ft-ex-block ft-ex-block--active">
       <header className="ft-ex-block__head">
@@ -130,45 +131,55 @@ export function ExerciseBlock({
           className={`ft-ex-block__name${emptyName ? ' ft-ex-block__name--empty' : ''}`}
           onClick={() => setNameOpen(true)}
         >
-          <span className="ft-ex-block__icon-wrap" aria-hidden="true">
-            <FaIcon icon={uiIcons.dumbbell} className="ft-ex-block__icon" />
+          <span className="ft-ex-block__name-text">
+            {displayName}
+            <FaIcon icon={uiIcons.edit} className="ft-ex-block__name-edit" />
           </span>
-          <span className="ft-ex-block__name-text">{displayName}</span>
-          <FaIcon icon={uiIcons.edit} className="ft-ex-block__name-edit" />
+          <span className="ft-ex-block__meta">
+            {trackDone
+              ? `${doneCount}/${sets.length} ${t('common.sets')}`
+              : `${sets.length} ${t('common.sets')}`}
+          </span>
         </button>
-        {(onMoveUp || onMoveDown) && (
-          <div className="ft-ex-block__reorder" role="group" aria-label={t('journal.reorder')}>
-            <button
-              type="button"
-              className="ft-ex-block__reorder-btn"
-              onClick={onMoveUp}
-              disabled={!onMoveUp}
-              aria-label={t('journal.moveUp')}
-            >
-              <FaIcon icon={uiIcons.arrowUp} className="ft-ex-block__reorder-icon" />
-            </button>
-            <button
-              type="button"
-              className="ft-ex-block__reorder-btn"
-              onClick={onMoveDown}
-              disabled={!onMoveDown}
-              aria-label={t('journal.moveDown')}
-            >
-              <FaIcon icon={uiIcons.arrowDown} className="ft-ex-block__reorder-icon" />
-            </button>
-          </div>
-        )}
-        {onRemove && (
+        {hasMenu && (
           <button
             type="button"
-            className="ft-ex-block__remove"
-            onClick={onRemove}
-            aria-label={t('common.delete')}
+            className={`ft-ex-block__more${menuOpen ? ' ft-ex-block__more--open' : ''}`}
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-label={t('journal.exerciseActions')}
           >
-            <FaIcon icon={uiIcons.trash} className="ft-ex-block__remove-icon" />
+            <FaIcon icon={uiIcons.more} />
           </button>
         )}
       </header>
+
+      {hasMenu && menuOpen && (
+        <div className="ft-ex-block__menu" role="group" aria-label={t('journal.exerciseActions')}>
+          {onMoveUp && (
+            <button type="button" className="ft-ex-block__menu-btn" onClick={onMoveUp}>
+              <FaIcon icon={uiIcons.arrowUp} />
+              {t('journal.moveUp')}
+            </button>
+          )}
+          {onMoveDown && (
+            <button type="button" className="ft-ex-block__menu-btn" onClick={onMoveDown}>
+              <FaIcon icon={uiIcons.arrowDown} />
+              {t('journal.moveDown')}
+            </button>
+          )}
+          {onRemove && (
+            <button
+              type="button"
+              className="ft-ex-block__menu-btn ft-ex-block__menu-btn--danger"
+              onClick={onRemove}
+            >
+              <FaIcon icon={uiIcons.trash} />
+              {t('common.delete')}
+            </button>
+          )}
+        </div>
+      )}
 
       <div
         className={`ft-set-inline${trackDone ? ' ft-set-inline--track' : ''}`}
@@ -176,12 +187,10 @@ export function ExerciseBlock({
         aria-label={t('common.sets')}
       >
         <div className="ft-set-inline__head" aria-hidden="true">
-          <span>#</span>
-          <span>
-            {t('journal.weight')} ({t('common.kg')})
-          </span>
+          <span>{t('journal.setShort')}</span>
+          <span>{t('common.kg')}</span>
           <span>{t('common.reps')}</span>
-          {trackDone && <span>✓</span>}
+          {trackDone && <span />}
         </div>
         {sets.map((set, i) => {
           const weight = set.weight === '' || set.weight == null ? 0 : Number(set.weight) || 0
@@ -252,7 +261,7 @@ export function ExerciseBlock({
       </div>
 
       <div className={`ft-ex-block__set-actions${onStartRest ? '' : ' ft-ex-block__set-actions--single'}`}>
-        <button type="button" className="ft-btn ft-btn--secondary ft-ex-block__add-set" onClick={addSet}>
+        <button type="button" className="ft-btn ft-ex-block__add-set" onClick={addSet}>
           <FaIcon icon={uiIcons.add} className="ft-ex-block__add-icon" />
           {t('journal.addSet')}
         </button>

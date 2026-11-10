@@ -38,7 +38,7 @@ export function RpeCompact({ value, onChange, ariaLabel }) {
       max={10}
       emptyAs={5}
       ariaLabel={ariaLabel ?? t('rpe.label')}
-      valueStyle={{ color: tint, background: `${tint}22` }}
+      valueStyle={{ color: tint }}
       size="sm"
     />
   )

@@ -7,6 +7,7 @@ import {
   faChevronDown,
   faChevronLeft,
   faDumbbell,
+  faEllipsis,
   faExpand,
   faForward,
   faGear,
@@ -61,4 +62,5 @@ export const uiIcons = {
   redo: faRotateRight,
   skip: faForward,
   expand: faExpand,
+  more: faEllipsis,
 }
