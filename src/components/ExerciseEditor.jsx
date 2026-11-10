@@ -324,6 +324,7 @@ export function ExerciseBlock({
           <ExerciseAutocomplete
             value={exercise.name ?? ''}
             onChange={updateName}
+            onSelect={() => setNameOpen(false)}
             placeholder={t('journal.exerciseName')}
           />
           <button

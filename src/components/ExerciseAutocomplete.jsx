@@ -16,7 +16,8 @@ import { uiIcons } from '../lib/icons'
 
 const LIBRARY_GROUPS = groupedLibrary()
 
-export function ExerciseAutocomplete({ value, onChange, placeholder }) {
+/** `onSelect` fires after a name is picked from the list (not while typing). */
+export function ExerciseAutocomplete({ value, onChange, onSelect, placeholder }) {
   const { locale, t } = useLocale()
   const { sessions } = useFitness()
   const [open, setOpen] = useState(false)
@@ -70,6 +71,7 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const pick = (name) => {
     onChange(name)
     setOpen(false)
+    onSelect?.(name)
   }
 
   const pickGroup = (group) => {
