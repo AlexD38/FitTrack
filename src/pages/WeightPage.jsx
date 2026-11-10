@@ -38,9 +38,19 @@ export function WeightPage({ onOpenSettings }) {
     return val < 0 ? ' ft-positive' : ' ft-negative'
   }
 
+  // The stepper shows the current weight until edited, so saving must use what is displayed.
+  const shownGoal =
+    goalDraft === '' || goalDraft == null ? (goal ?? delta.current ?? 70) : Number(goalDraft)
+  const goalSaved = goal != null && Math.abs(shownGoal - goal) < 0.001
+
   const saveGoal = () => {
-    const n = Number(goalDraft)
-    updateSettings({ weightGoal: n > 0 ? n : null })
+    updateSettings({ weightGoal: shownGoal > 0 ? shownGoal : null })
+    setGoalDraft(shownGoal)
+  }
+
+  const removeGoal = () => {
+    updateSettings({ weightGoal: null })
+    setGoalDraft('')
   }
 
   return (
@@ -110,7 +120,7 @@ export function WeightPage({ onOpenSettings }) {
             </div>
             <div className="ft-goal-row">
               <NumberStepper
-                value={goalDraft === '' || goalDraft == null ? (delta.current ?? 70) : goalDraft}
+                value={shownGoal}
                 onChange={setGoalDraft}
                 step={0.1}
                 min={20}
@@ -119,8 +129,13 @@ export function WeightPage({ onOpenSettings }) {
                 size="md"
               />
               <span className="ft-goal-unit">{unit}</span>
-              <button type="button" className="ft-btn ft-btn--primary" onClick={saveGoal}>
-                {t('goals.set')}
+              <button
+                type="button"
+                className={`ft-btn ${goalSaved ? 'ft-btn--secondary' : 'ft-btn--primary'}`}
+                onClick={saveGoal}
+                disabled={goalSaved}
+              >
+                {goalSaved ? `✓ ${t('goals.saved')}` : t('goals.set')}
               </button>
             </div>
             {goal != null && delta.current != null && (
@@ -129,6 +144,9 @@ export function WeightPage({ onOpenSettings }) {
                 <strong className={delta.current <= goal ? 'ft-positive' : 'ft-negative'}>
                   {(delta.current - goal).toFixed(1)} {unit}
                 </strong>
+                <button type="button" className="ft-goal-remove" onClick={removeGoal}>
+                  {t('goals.remove')}
+                </button>
               </p>
             )}
           </section>
