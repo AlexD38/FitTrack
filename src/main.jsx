@@ -10,9 +10,17 @@ createRoot(document.getElementById('root')).render(
 )
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      /* ignore offline registration errors in dev */
+  if (import.meta.env.PROD) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        /* ignore registration errors (e.g. private mode) */
+      })
     })
-  })
+  } else {
+    // A worker left over from a build would serve stale files and hide Vite's live updates.
+    navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()))
+    if ('caches' in window) {
+      caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)))
+    }
+  }
 }
