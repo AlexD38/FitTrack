@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 4731 --strictPort",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview --port 4731 --strictPort"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
