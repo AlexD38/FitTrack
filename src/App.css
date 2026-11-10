@@ -3416,6 +3416,25 @@
   text-overflow: ellipsis;
 }
 
+.ft-ex-block__summary-line {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.ft-flames--static {
+  flex-shrink: 0;
+  gap: 0;
+}
+
+.ft-flames--static .ft-flame {
+  width: 0.9rem;
+  height: 1rem;
+  font-size: 0.75rem;
+  cursor: inherit;
+}
+
 .ft-ex-block__summary {
   font-size: 0.75rem;
   color: var(--color-ink-muted);

@@ -29,16 +29,37 @@ const FLAME_HUES = [85, 50, 28, 10, -15]
  * RPE as five flames, each worth 2 points: a full flame is an even value, a half flame the odd one
  * below it. Tapping a flame lights it fully; tapping it again drops it to half.
  */
-export function RpeFlames({ value, onChange, ariaLabel }) {
+export function RpeFlames({ value, onChange, ariaLabel, readOnly = false }) {
   const { t } = useLocale()
   const numeric = clampRpe(value)
   const label = ariaLabel ?? t('rpe.label')
+  const levelAt = (i) => {
+    const full = (i + 1) * 2
+    return numeric >= full ? 'full' : numeric === full - 1 ? 'half' : 'empty'
+  }
+
+  if (readOnly) {
+    return (
+      <span className="ft-flames ft-flames--static" role="img" aria-label={`${label} ${numeric}/10`}>
+        {Array.from({ length: FLAME_COUNT }, (_, i) => (
+          <span
+            key={i}
+            className={`ft-flame ft-flame--${levelAt(i)}`}
+            style={{ '--flame-hue': `${FLAME_HUES[i]}deg` }}
+          >
+            <span className="ft-flame__base">🔥</span>
+            <span className="ft-flame__fill">🔥</span>
+          </span>
+        ))}
+      </span>
+    )
+  }
 
   return (
     <div className="ft-flames" role="group" aria-label={`${label}: ${numeric}/10`}>
       {Array.from({ length: FLAME_COUNT }, (_, i) => {
         const full = (i + 1) * 2
-        const level = numeric >= full ? 'full' : numeric === full - 1 ? 'half' : 'empty'
+        const level = levelAt(i)
         const next = numeric === full ? full - 1 : full
         return (
           <button

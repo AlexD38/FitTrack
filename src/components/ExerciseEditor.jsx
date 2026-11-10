@@ -26,17 +26,20 @@ function formatSetWeight(weight, bodyweight, t) {
   return w > 0 ? `${t('journal.bodyweight')} +${w} ${t('common.kg')}` : t('journal.bodyweight')
 }
 
-/** Honest set summary for glanceable previews: `3× 80 kg · RPE 7`. */
+function summarySample(sets) {
+  const list = sets?.length ? sets : []
+  const withReps = list.filter((s) => s.reps !== '' && s.reps != null)
+  return withReps[withReps.length - 1] ?? list[list.length - 1]
+}
+
+/** Glanceable set summary: `3× 80 kg · 8 reps` (RPE is shown alongside as flames). */
 export function formatSetSummary(sets, t, bodyweight = false) {
   const list = sets?.length ? sets : []
   if (!list.length) return `0 ${t('common.sets')}`
-  const count = list.length
-  const withReps = list.filter((s) => s.reps !== '' && s.reps != null)
-  const sample = withReps[withReps.length - 1] ?? list[list.length - 1]
+  const sample = summarySample(list)
   const weight = sample?.weight === '' || sample?.weight == null ? 0 : sample.weight
   const reps = sample?.reps === '' || sample?.reps == null ? '—' : sample.reps
-  const rpe = sample?.rpe === '' || sample?.rpe == null ? 5 : sample.rpe
-  return `${count}× ${formatSetWeight(weight, bodyweight, t)} · ${reps} ${t('common.reps')} · ${t('rpe.label')} ${rpe}`
+  return `${list.length}× ${formatSetWeight(weight, bodyweight, t)} · ${reps} ${t('common.reps')}`
 }
 
 function carryForwardSet(sets) {
@@ -126,7 +129,10 @@ export function ExerciseBlock({
             <span className={`ft-ex-block__name-text${emptyName ? ' ft-ex-block__name--empty' : ''}`}>
               {displayName}
             </span>
-            <span className="ft-ex-block__summary">{formatSetSummary(sets, t, bodyweight)}</span>
+            <span className="ft-ex-block__summary-line">
+              <span className="ft-ex-block__summary">{formatSetSummary(sets, t, bodyweight)}</span>
+              <RpeFlames value={summarySample(sets)?.rpe ?? 5} readOnly />
+            </span>
           </span>
           {trackDone && (
             <span className={`ft-ex-block__progress${allDone ? ' ft-ex-block__progress--done' : ''}`}>
