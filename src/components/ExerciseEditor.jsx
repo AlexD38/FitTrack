@@ -3,7 +3,7 @@ import { useLocale } from '../contexts/LocaleContext'
 import { useFitness } from '../contexts/FitnessContext'
 import { FaIcon } from './FaIcon'
 import { ExerciseAutocomplete } from './ExerciseAutocomplete'
-import { RpeCompact } from './RpeGauge'
+import { RpeFlames } from './RpeGauge'
 import { NumberStepper } from './NumberStepper'
 import { BottomSheet } from './BottomSheet'
 import { emptySet } from '../lib/sets'
@@ -268,7 +268,7 @@ export function ExerciseBlock({
               {!done && (
                 <div className="ft-set-inline__extra">
                   <span className="ft-set-inline__extra-label">{t('rpe.label')}</span>
-                  <RpeCompact
+                  <RpeFlames
                     value={set.rpe ?? 5}
                     onChange={(v) => updateSet(i, 'rpe', v)}
                     ariaLabel={`${setLabel} ${t('rpe.label')}`}

@@ -3801,13 +3801,14 @@
 }
 
 .ft-set-inline__extra {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--set-cols);
   align-items: center;
-  gap: 0.5rem;
-  padding-left: 2.5rem;
+  column-gap: 0.5rem;
 }
 
 .ft-set-inline__extra-label {
+  text-align: center;
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -3815,24 +3816,66 @@
   color: var(--color-ink-faint, var(--color-ink-muted));
 }
 
-.ft-set-inline__extra .ft-stepper {
-  width: auto;
-  height: 1.875rem;
+.ft-set-inline__extra .ft-flames {
+  grid-column: 2 / -2;
+  justify-self: center;
 }
 
-.ft-set-inline__extra .ft-stepper__btn,
-.ft-set-inline__extra .ft-stepper__value {
-  height: 1.875rem;
+.ft-set-inline:not(.ft-set-inline--track) .ft-set-inline__extra .ft-flames {
+  grid-column: 2;
 }
 
-.ft-set-inline__extra .ft-stepper__btn {
-  width: 1.875rem;
+.ft-flames {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
 }
 
-.ft-set-inline__extra .ft-stepper__value {
-  flex: 0 0 1.75rem;
-  min-width: 1.75rem;
-  font-size: 0.8125rem;
+.ft-flame {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ft-flame:active {
+  transform: scale(0.88);
+}
+
+.ft-flame__base,
+.ft-flame__fill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ft-flame__base {
+  filter: grayscale(1);
+  opacity: 0.22;
+}
+
+.ft-flame__fill {
+  position: absolute;
+  inset: 0;
+  filter: hue-rotate(var(--flame-hue, 0deg)) saturate(1.3);
+  transition: clip-path 0.2s ease, opacity 0.2s ease;
+}
+
+.ft-flame--empty .ft-flame__fill {
+  opacity: 0;
+}
+
+.ft-flame--half .ft-flame__fill {
+  clip-path: inset(0 50% 0 0);
 }
 
 .ft-set-inline__remove {
@@ -3841,8 +3884,7 @@
   justify-content: center;
   width: 1.875rem;
   height: 1.875rem;
-  margin-left: auto;
-  margin-right: 0.3rem;
+  justify-self: center;
   border: 0;
   border-radius: var(--radius-full);
   background: transparent;

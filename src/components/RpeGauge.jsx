@@ -1,7 +1,6 @@
 import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
-import { NumberStepper } from './NumberStepper'
 
 /** Green (easy) → yellow → orange → red (max effort) */
 export const RPE_GRADIENT =
@@ -22,25 +21,40 @@ function clampRpe(value) {
   return Math.min(10, Math.max(1, n))
 }
 
-/** Compact RPE control for inline set rows: − / value / +. */
-export function RpeCompact({ value, onChange, ariaLabel }) {
+const FLAME_COUNT = 5
+/** Hue shift applied to the 🔥 emoji (natively orange) so the five flames run green → red. */
+const FLAME_HUES = [85, 50, 28, 10, -15]
+
+/**
+ * RPE as five flames, each worth 2 points: a full flame is an even value, a half flame the odd one
+ * below it. Tapping a flame lights it fully; tapping it again drops it to half.
+ */
+export function RpeFlames({ value, onChange, ariaLabel }) {
   const { t } = useLocale()
   const numeric = clampRpe(value)
-  const tint = rpeColor(numeric)
+  const label = ariaLabel ?? t('rpe.label')
 
   return (
-    <NumberStepper
-      className="ft-stepper--rpe"
-      value={numeric}
-      onChange={onChange}
-      step={1}
-      min={1}
-      max={10}
-      emptyAs={5}
-      ariaLabel={ariaLabel ?? t('rpe.label')}
-      valueStyle={{ color: tint }}
-      size="sm"
-    />
+    <div className="ft-flames" role="group" aria-label={`${label}: ${numeric}/10`}>
+      {Array.from({ length: FLAME_COUNT }, (_, i) => {
+        const full = (i + 1) * 2
+        const level = numeric >= full ? 'full' : numeric === full - 1 ? 'half' : 'empty'
+        const next = numeric === full ? full - 1 : full
+        return (
+          <button
+            key={i}
+            type="button"
+            className={`ft-flame ft-flame--${level}`}
+            style={{ '--flame-hue': `${FLAME_HUES[i]}deg` }}
+            onClick={() => onChange(next)}
+            aria-label={`${label} ${next}`}
+          >
+            <span className="ft-flame__base" aria-hidden="true">🔥</span>
+            <span className="ft-flame__fill" aria-hidden="true">🔥</span>
+          </button>
+        )
+      })}
+    </div>
   )
 }
 

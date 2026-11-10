@@ -209,7 +209,7 @@ const STRINGS = {
       label: 'RPE',
       easy: 'Facile',
       hard: 'Max',
-      hint: '1 = facile, 10 = effort maximal. Ajuste après chaque série.',
+      hint: '1 flamme = facile, 5 = effort maximal. Retouche une flamme pour la mettre à moitié.',
     },
     goals: {
       title: 'Objectifs',
@@ -494,7 +494,7 @@ const STRINGS = {
       label: 'RPE',
       easy: 'Easy',
       hard: 'Max',
-      hint: '1 = easy, 10 = max effort. Adjust after each set.',
+      hint: '1 flame = easy, 5 = max effort. Tap a flame again to make it half.',
     },
     goals: {
       title: 'Goals',
