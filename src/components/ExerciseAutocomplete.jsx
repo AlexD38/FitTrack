@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  equipmentLabel,
   exerciseLabel,
   findLibraryExercise,
   groupedLibrary,
@@ -11,14 +10,11 @@ import { useLocale } from '../contexts/LocaleContext'
 import { useFitness } from '../contexts/FitnessContext'
 import { getAllExerciseNames, getRecentExerciseNames } from '../lib/stats'
 import { BottomSheet } from './BottomSheet'
+import { EquipmentChoice } from './EquipmentChoice'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
 
 const LIBRARY_GROUPS = groupedLibrary()
-
-function capitalize(text) {
-  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
-}
 
 export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const { locale, t } = useLocale()
@@ -26,6 +22,7 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const [open, setOpen] = useState(false)
   const [muscleFilter, setMuscleFilter] = useState(null)
   const [query, setQuery] = useState('')
+  const [choosing, setChoosing] = useState(null)
 
   const history = useMemo(() => getAllExerciseNames(sessions), [sessions])
   const recent = useMemo(() => getRecentExerciseNames(sessions, 5), [sessions])
@@ -73,6 +70,11 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const pick = (name) => {
     onChange(name)
     setOpen(false)
+  }
+
+  const pickGroup = (group) => {
+    if (group.variants.length === 1) pick(exerciseLabel(group.variants[0], locale))
+    else setChoosing(group)
   }
 
   const showRecentBlock = (muscleFilter == null && !q && recent.length > 0) || muscleFilter === 'recent'
@@ -197,46 +199,16 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
 
           <ul className="ft-exercise-picker__groups">
             {visibleGroups.map((g) => {
-              const single = g.variants.length === 1
-              const groupSelected = g.variants.some((v) => v.id === selectedId)
-              if (single) {
-                const only = g.variants[0]
-                return (
-                  <li key={g.baseId} className="ft-exercise-group">
-                    <button
-                      type="button"
-                      className={`ft-exercise-group__single${groupSelected ? ' ft-exercise-group__single--selected' : ''}`}
-                      onClick={() => pick(exerciseLabel(only, locale))}
-                    >
-                      <span className="ft-exercise-group__name">{g.label}</span>
-                      {only.equipment && (
-                        <span className="ft-exercise-group__equip">
-                          {capitalize(equipmentLabel(only.equipment, locale))}
-                        </span>
-                      )}
-                    </button>
-                  </li>
-                )
-              }
+              const selected = g.variants.some((v) => v.id === selectedId)
               return (
-                <li
-                  key={g.baseId}
-                  className={`ft-exercise-group${groupSelected ? ' ft-exercise-group--selected' : ''}`}
-                >
-                  <span className="ft-exercise-group__name">{g.label}</span>
-                  <span className="ft-exercise-group__variants" role="group" aria-label={g.label}>
-                    {g.variants.map((v) => (
-                      <button
-                        key={v.id}
-                        type="button"
-                        className={`ft-exercise-group__variant${v.id === selectedId ? ' ft-exercise-group__variant--selected' : ''}`}
-                        onClick={() => pick(exerciseLabel(v, locale))}
-                        aria-label={exerciseLabel(v, locale)}
-                      >
-                        {capitalize(equipmentLabel(v.equipment, locale))}
-                      </button>
-                    ))}
-                  </span>
+                <li key={g.baseId} className="ft-exercise-group">
+                  <button
+                    type="button"
+                    className={`ft-exercise-group__single${selected ? ' ft-exercise-group__single--selected' : ''}`}
+                    onClick={() => pickGroup(g)}
+                  >
+                    <span className="ft-exercise-group__name">{g.label}</span>
+                  </button>
                 </li>
               )
             })}
@@ -247,6 +219,19 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
           )}
         </div>
       </BottomSheet>
+
+      {choosing && (
+        <EquipmentChoice
+          key={choosing.baseId}
+          title={choosing.label}
+          variants={choosing.variants}
+          onPick={(variant) => {
+            setChoosing(null)
+            pick(exerciseLabel(variant, locale))
+          }}
+          onCancel={() => setChoosing(null)}
+        />
+      )}
     </div>
   )
 }
