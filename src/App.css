@@ -1737,59 +1737,6 @@
 }
 
 /* Exercise name picker */
-.ft-exercise-picker {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-}
-
-.ft-exercise-picker__field {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.ft-exercise-picker__input {
-  width: 100%;
-  padding-right: 3.1rem;
-}
-
-.ft-exercise-picker__browse {
-  position: absolute;
-  right: 0.25rem;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border: none;
-  border-radius: var(--radius-md);
-  background: transparent;
-  color: var(--color-ink-muted);
-  -webkit-tap-highlight-color: transparent;
-}
-
-.ft-exercise-picker__browse:active {
-  transform: translateY(-50%) scale(0.96);
-  color: var(--color-accent);
-}
-
-.ft-exercise-picker__browse-icon {
-  display: inline-flex;
-  width: 1.15rem;
-  height: 1.15rem;
-}
-
-.ft-exercise-picker__browse-icon svg {
-  width: 100%;
-  height: 100%;
-  fill: currentColor;
-}
-
 .ft-exercise-picker__compose-hint {
   margin: 0 0 var(--space-4);
   font-size: 0.75rem;
@@ -3700,13 +3647,6 @@
   width: 100%;
   height: 100%;
   fill: currentColor;
-}
-
-.ft-ex-block__name-hint {
-  margin: 0 0 var(--space-3);
-  font-size: 0.8125rem;
-  color: var(--color-ink-muted);
-  line-height: 1.4;
 }
 
 .ft-set-inline {

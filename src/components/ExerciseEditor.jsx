@@ -2,10 +2,9 @@ import { useEffect, useState } from 'react'
 import { useLocale } from '../contexts/LocaleContext'
 import { useFitness } from '../contexts/FitnessContext'
 import { FaIcon } from './FaIcon'
-import { ExerciseAutocomplete } from './ExerciseAutocomplete'
+import { ExercisePicker } from './ExercisePicker'
 import { RpeFlames } from './RpeGauge'
 import { NumberStepper } from './NumberStepper'
-import { BottomSheet } from './BottomSheet'
 import { emptySet } from '../lib/sets'
 import { withLastPerformance } from '../lib/lastPerformance'
 import { findLibraryExercise, isBodyweightExercise } from '../lib/exercises'
@@ -67,7 +66,8 @@ export function ExerciseBlock({
 }) {
   const { t } = useLocale()
   const { sessions } = useFitness()
-  const [nameOpen, setNameOpen] = useState(false)
+  // Names can't be typed, so a freshly added (unnamed) exercise opens the list straight away.
+  const [nameOpen, setNameOpen] = useState(() => !collapsed && !exercise.name?.trim())
   const [menuOpen, setMenuOpen] = useState(false)
   const sets = exercise.sets?.length ? exercise.sets : [emptySet()]
   const displayName = exercise.name?.trim() || t('journal.exerciseName')
@@ -313,31 +313,12 @@ export function ExerciseBlock({
         )}
       </div>
 
-      <BottomSheet
+      <ExercisePicker
         open={nameOpen}
         onClose={() => setNameOpen(false)}
-        title={t('journal.editExercise')}
-        showBack
-      >
-        <div className="ft-ex-block__name-sheet">
-          <p className="ft-ex-block__name-hint">{t('journal.exerciseRenameHint')}</p>
-          <ExerciseAutocomplete
-            value={exercise.name ?? ''}
-            onChange={updateName}
-            onSelect={() => setNameOpen(false)}
-            placeholder={t('journal.exerciseName')}
-          />
-          <button
-            type="button"
-            className="ft-btn ft-btn--primary"
-            style={{ width: '100%', marginTop: 'var(--space-4)' }}
-            onClick={() => setNameOpen(false)}
-            disabled={!exercise.name?.trim()}
-          >
-            {t('journal.useExerciseName')}
-          </button>
-        </div>
-      </BottomSheet>
+        value={exercise.name ?? ''}
+        onPick={updateName}
+      />
     </section>
   )
 }

@@ -11,16 +11,13 @@ import { useFitness } from '../contexts/FitnessContext'
 import { getAllExerciseNames, getRecentExerciseNames } from '../lib/stats'
 import { BottomSheet } from './BottomSheet'
 import { EquipmentChoice } from './EquipmentChoice'
-import { FaIcon } from './FaIcon'
-import { uiIcons } from '../lib/icons'
 
 const LIBRARY_GROUPS = groupedLibrary()
 
-/** `onSelect` fires after a name is picked from the list (not while typing). */
-export function ExerciseAutocomplete({ value, onChange, onSelect, placeholder }) {
+/** Exercise list in a bottom sheet; exercises are only chosen from it, never typed. */
+export function ExercisePicker({ open, onClose, value, onPick }) {
   const { locale, t } = useLocale()
   const { sessions } = useFitness()
-  const [open, setOpen] = useState(false)
   const [muscleFilter, setMuscleFilter] = useState(null)
   const [query, setQuery] = useState('')
   const [choosing, setChoosing] = useState(null)
@@ -69,9 +66,8 @@ export function ExerciseAutocomplete({ value, onChange, onSelect, placeholder })
   }, [open])
 
   const pick = (name) => {
-    onChange(name)
-    setOpen(false)
-    onSelect?.(name)
+    onPick(name)
+    onClose()
   }
 
   const pickGroup = (group) => {
@@ -82,30 +78,8 @@ export function ExerciseAutocomplete({ value, onChange, onSelect, placeholder })
   const showRecentBlock = (muscleFilter == null && !q && recent.length > 0) || muscleFilter === 'recent'
 
   return (
-    <div className="ft-exercise-picker">
-      <div className="ft-exercise-picker__field">
-        <input
-          className="ft-input ft-exercise-picker__input"
-          value={value ?? ''}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder || t('journal.exerciseName')}
-          autoComplete="off"
-          aria-label={t('journal.exerciseName')}
-        />
-        <button
-          type="button"
-          className="ft-exercise-picker__browse"
-          onClick={() => setOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-label={t('dashboard.selectExercise')}
-          title={t('dashboard.selectExercise')}
-        >
-          <FaIcon icon={uiIcons.chevronDown} className="ft-exercise-picker__browse-icon" />
-        </button>
-      </div>
-
-      <BottomSheet open={open} onClose={() => setOpen(false)} title={t('dashboard.selectExercise')}>
+    <>
+      <BottomSheet open={open} onClose={onClose} title={t('dashboard.selectExercise')}>
         <input
           className="ft-input ft-exercise-picker__search"
           type="search"
@@ -234,6 +208,6 @@ export function ExerciseAutocomplete({ value, onChange, onSelect, placeholder })
           onCancel={() => setChoosing(null)}
         />
       )}
-    </div>
+    </>
   )
 }
