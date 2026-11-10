@@ -98,11 +98,17 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
   useEffect(() => {
     if (!open || !initial || !sessionId) return
     finishingRef.current = false
-    const startedAt = initial.startedAt || new Date().toISOString()
+    const now = Date.now()
+    let startedAt = initial.startedAt || new Date(now).toISOString()
+    const pausedAt = initial.pausedAt ? Date.parse(initial.pausedAt) : NaN
+    // Time spent closed (paused) doesn't count towards the workout duration.
+    if (initial.startedAt && !Number.isNaN(pausedAt) && pausedAt <= now) {
+      startedAt = new Date(Date.parse(initial.startedAt) + (now - pausedAt)).toISOString()
+    }
     const next = buildLiveState({ ...initial, startedAt })
     setWorkout(next)
-    if (!initial.startedAt) {
-      updateSession(sessionId, { startedAt, status: SESSION_STATUS.ACTIVE })
+    if (startedAt !== initial.startedAt || initial.pausedAt) {
+      updateSession(sessionId, { startedAt, pausedAt: null, status: SESSION_STATUS.ACTIVE })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [open, sessionId])
@@ -126,7 +132,7 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
     const current = workoutRef.current
     if (!id || !current) return
     const payload = toPersistPayload(current, { requireSets: false })
-    updateSession(id, { ...payload, status: SESSION_STATUS.ACTIVE })
+    updateSession(id, { ...payload, status: SESSION_STATUS.ACTIVE, pausedAt: new Date().toISOString() })
   }, [updateSession])
 
   const handleClose = useCallback(() => {
@@ -155,9 +161,27 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
 
   const handleFinish = useCallback(() => {
     if (!workout || !sessionId || finishingRef.current) return
+    const named = (workout.exercises ?? []).filter((ex) => ex.name?.trim())
+    const usesChecks = named.some((ex) => (ex.sets ?? []).some((s) => s.done))
+    const pendingCount = usesChecks
+      ? named.reduce((n, ex) => n + (ex.sets ?? []).filter((s) => !s.done).length, 0)
+      : 0
+    if (pendingCount > 0 && !window.confirm(t('journal.finishPending').replace('{n}', pendingCount))) {
+      return
+    }
     finishingRef.current = true
     timer.handleClose()
-    const cleaned = toPersistPayload(workout, { requireSets: true })
+    // Once ✓ is used, only checked sets are real; the rest stays in liveDraft so the session can be resumed.
+    const logged = usesChecks
+      ? {
+          ...workout,
+          exercises: workout.exercises.map((ex) => ({
+            ...ex,
+            sets: (ex.sets ?? []).filter((s) => s.done),
+          })),
+        }
+      : workout
+    const cleaned = toPersistPayload(logged, { requireSets: true })
     if (cleaned.exercises.length === 0) {
       deleteSession(sessionId)
       onClose?.()
@@ -170,11 +194,13 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
       status: SESSION_STATUS.PAST,
       endedAt,
       durationSeconds,
+      pausedAt: null,
+      liveDraft: pendingCount > 0 ? toPersistPayload(workout, { requireSets: false }).exercises : null,
     }
     updateSession(sessionId, finished)
     onSaved?.({ ...finished, id: sessionId })
     onClose?.()
-  }, [workout, sessionId, updateSession, deleteSession, onClose, onSaved, timer])
+  }, [workout, sessionId, updateSession, deleteSession, onClose, onSaved, timer, t])
 
   const dismissRpeHint = () => {
     setShowRpeHint(false)

@@ -76,7 +76,8 @@ function cloneSessionPayload(session, dateOverride) {
     muscles: [...(session.muscles ?? [])],
     notes: session.notes ?? '',
     status: session.status ?? SESSION_STATUS.PAST,
-    exercises: (session.exercises ?? []).map((ex) => ({
+    // An early-finished session keeps its full plan in liveDraft — repeat that, not just the logged part.
+    exercises: (session.liveDraft?.length ? session.liveDraft : session.exercises ?? []).map((ex) => ({
       name: ex.name,
       sets: (ex.sets ?? []).map((s) => ({
         weight: s.weight,

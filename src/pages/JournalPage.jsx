@@ -20,6 +20,8 @@ import {
   resolveSessionStatus,
   isActiveSession,
   findActiveSession,
+  isReopenableToday,
+  reopenPayload,
   todayIsoDate,
 } from '../lib/sessionStatus'
 import { format, parseISO } from 'date-fns'
@@ -42,6 +44,7 @@ function exerciseNamesPreview(session, max = 3) {
 function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat, onFree, onTemplate, onMore }) {
   const { locale, t } = useLocale()
   const dateLocale = locale === 'fr' ? fr : enUS
+  const lastIsToday = Boolean(last && isReopenableToday(last))
 
   let primary = null
   if (active) {
@@ -60,8 +63,8 @@ function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat,
     }
   } else if (last) {
     primary = {
-      kind: 'repeat',
-      title: t('journal.quickRepeat'),
+      kind: lastIsToday ? 'reopen' : 'repeat',
+      title: lastIsToday ? t('journal.quickResumeToday') : t('journal.quickRepeat'),
       meta: [format(parseISO(last.date), 'EEE d MMM', { locale: dateLocale }), exerciseNamesPreview(last)]
         .filter(Boolean)
         .join(' — '),
@@ -87,8 +90,8 @@ function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat,
         <div className="ft-quick__chips">
           {last && primary?.kind === 'planned' && (
             <button type="button" className="ft-chip ft-quick__chip" onClick={onRepeat}>
-              <FaIcon icon={uiIcons.redo} className="ft-quick__chip-icon" />
-              {t('journal.quickRepeat')}
+              <FaIcon icon={lastIsToday ? uiIcons.play : uiIcons.redo} className="ft-quick__chip-icon" />
+              {lastIsToday ? t('journal.quickResumeToday') : t('journal.quickRepeat')}
             </button>
           )}
           <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
@@ -243,6 +246,11 @@ export function JournalPage({ onOpenSettings, intent }) {
       return
     }
     closeSheet()
+    if (isReopenableToday(session)) {
+      // Finished earlier today: continue the same session instead of creating a copy.
+      startOrResumeLive(reopenPayload(session), { existingId: session.id, replaceActive: true })
+      return
+    }
     const payload = {
       ...cloneSessionPayload(session, todayIsoDate()),
       status: SESSION_STATUS.ACTIVE,
@@ -294,6 +302,7 @@ export function JournalPage({ onOpenSettings, intent }) {
     const status = normalizeSessionStatus(session.status)
     if (status === SESSION_STATUS.ACTIVE) return t('live.resume')
     if (status === SESSION_STATUS.UPCOMING) return t('live.start')
+    if (isReopenableToday(session)) return t('live.resume')
     return t('live.replay')
   }
 
@@ -463,6 +472,7 @@ export function JournalPage({ onOpenSettings, intent }) {
                 patchDetailSession({
                   exercises,
                   muscles: fromEx.length ? fromEx : detailSession.muscles,
+                  liveDraft: null,
                 })
               }}
             />

@@ -52,6 +52,36 @@ export function pastSessionsOnly(sessions) {
   return (sessions ?? []).filter(isPastSession)
 }
 
+/** A session finished today is continued in place rather than copied. */
+export function isReopenableToday(session) {
+  return isPastSession(session) && session?.date === todayIsoDate()
+}
+
+/**
+ * Live payload to continue a finished session: restores the unfinished plan
+ * (or marks logged sets done) and shifts startedAt so elapsed time resumes where it stopped.
+ */
+export function reopenPayload(session) {
+  const exercises = session.liveDraft?.length
+    ? session.liveDraft
+    : (session.exercises ?? []).map((ex) => ({
+        ...ex,
+        sets: (ex.sets ?? []).map((s) => ({ ...s, done: true })),
+      }))
+  const elapsedMs = (Number(session.durationSeconds) || 0) * 1000
+  return {
+    date: session.date,
+    muscles: [...(session.muscles ?? [])],
+    notes: session.notes ?? '',
+    exercises,
+    startedAt: new Date(Date.now() - elapsedMs).toISOString(),
+    endedAt: null,
+    durationSeconds: null,
+    liveDraft: null,
+    pausedAt: null,
+  }
+}
+
 /** Past + in-progress — for dashboard stats (excludes upcoming). */
 export function statsSessionsOnly(sessions) {
   return (sessions ?? []).filter((s) => !isUpcomingSession(s))
