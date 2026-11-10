@@ -21,7 +21,7 @@ npm install
 npm run dev
 ```
 
-L’app tourne sur [http://localhost:8080](http://localhost:8080).
+L’app tourne sur [http://localhost:4731](http://localhost:4731).
 
 ## Build
 
