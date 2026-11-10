@@ -66,7 +66,17 @@ export function ExerciseBlock({
     if (field === 'weight') next = Number(val) || 0
     else if (field === 'reps') next = val === '' || val == null ? 0 : Number(val)
     else if (field === 'rpe') next = val === '' || val == null ? 5 : Number(val)
+    const prev = nextSets[idx][field]
     nextSets[idx] = { ...nextSets[idx], [field]: next }
+    // Live: following unchecked sets that matched the old value follow along (4×8 @ 80 = one edit).
+    if (trackDone && field !== 'rpe') {
+      for (let j = idx + 1; j < nextSets.length; j += 1) {
+        const s = nextSets[j]
+        if (!s.done && Number(s[field] ?? 0) === Number(prev ?? 0)) {
+          nextSets[j] = { ...s, [field]: next }
+        }
+      }
+    }
     onChange({ ...exercise, sets: nextSets })
   }
 
