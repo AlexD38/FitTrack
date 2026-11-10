@@ -10,7 +10,7 @@ import {
 } from 'react'
 
 import { DEFAULT_PALETTE, isValidPalette } from '../lib/palettes'
-import { withLastWeights } from '../lib/lastWeights'
+import { withLastPerformance } from '../lib/lastPerformance'
 import {
   SESSION_STATUS,
   findActiveSession,
@@ -149,10 +149,10 @@ export function FitnessProvider({ children }) {
       return active.id
     }
 
-    // New sessions start from last time's weights; a planned session keeps weights already set.
+    // New sessions start from last time's weight/reps; a planned session keeps values already set.
     const payload = {
       ...rawPayload,
-      exercises: withLastWeights(rawPayload.exercises, stateRef.current.sessions, {
+      exercises: withLastPerformance(rawPayload.exercises, stateRef.current.sessions, {
         onlyEmpty: Boolean(existingId),
       }),
     }

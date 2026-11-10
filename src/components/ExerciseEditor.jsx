@@ -7,7 +7,7 @@ import { RpeCompact } from './RpeGauge'
 import { NumberStepper } from './NumberStepper'
 import { BottomSheet } from './BottomSheet'
 import { emptySet } from '../lib/sets'
-import { withLastWeights } from '../lib/lastWeights'
+import { withLastPerformance } from '../lib/lastPerformance'
 import { uiIcons } from '../lib/icons'
 
 const WEIGHT_STEP = 2.5
@@ -64,7 +64,7 @@ export function ExerciseBlock({
 
   const updateName = (name) => {
     const renamed = { ...exercise, name }
-    onChange(trackDone ? withLastWeights([renamed], sessions, { onlyEmpty: true })[0] : renamed)
+    onChange(trackDone ? withLastPerformance([renamed], sessions, { onlyEmpty: true })[0] : renamed)
   }
 
   const updateSet = (idx, field, val) => {
