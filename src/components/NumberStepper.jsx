@@ -46,6 +46,7 @@ export function NumberStepper({
   size = 'md',
   editable = true,
   format,
+  onBelowMin,
 }) {
   const numeric = toNumber(value, emptyAs)
   const [editing, setEditing] = useState(false)
@@ -119,6 +120,11 @@ export function NumberStepper({
         holdRef.current.repeated = false
         return
       }
+      // Only a deliberate tap at the minimum triggers onBelowMin, never a hold running down to it.
+      if (dir < 0 && onBelowMin && latestRef.current.numeric <= latestRef.current.min) {
+        onBelowMin()
+        return
+      }
       bump(dir)
     },
   })
@@ -144,7 +150,7 @@ export function NumberStepper({
       <button
         type="button"
         className="ft-stepper__btn"
-        disabled={numeric <= min}
+        disabled={numeric <= min && !onBelowMin}
         aria-label={`${ariaLabel ?? ''} −`.trim()}
         {...holdHandlers(-1)}
       >

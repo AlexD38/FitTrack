@@ -247,6 +247,7 @@ export function ExerciseBlock({
                   max={WEIGHT_MAX}
                   ariaLabel={`${setLabel} ${t('journal.weight')}`}
                   format={bodyweight ? (w, text) => (w > 0 ? `+${text}` : t('journal.bodyweight')) : undefined}
+                  onBelowMin={bodyweight ? undefined : toggleBodyweight}
                   size="sm"
                 />
                 <NumberStepper
