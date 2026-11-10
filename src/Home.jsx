@@ -10,6 +10,7 @@ import { runPageTransition } from './lib/pageTransition'
 
 export default function Home() {
   const [screen, setScreen] = useState('dashboard')
+  const [journalIntent, setJournalIntent] = useState(null)
   const pageRef = useRef(null)
   const switchingRef = useRef(false)
   const { settingsOpen, openSettings, closeSettings } = useSettingsSheet()
@@ -31,7 +32,20 @@ export default function Home() {
   )
 
   const settingsProps = { onOpenSettings: openSettings }
-  const goJournal = useCallback(() => handleNav('journal'), [handleNav])
+  const goJournal = useCallback(
+    (intent) => {
+      setJournalIntent(typeof intent === 'string' ? intent : null)
+      handleNav('journal')
+    },
+    [handleNav],
+  )
+  const navFromBar = useCallback(
+    (next) => {
+      setJournalIntent(null)
+      handleNav(next)
+    },
+    [handleNav],
+  )
   const goWeight = useCallback(() => handleNav('weight'), [handleNav])
 
   return (
@@ -40,12 +54,12 @@ export default function Home() {
         {screen === 'dashboard' && (
           <DashboardPage {...settingsProps} onGoJournal={goJournal} onGoWeight={goWeight} />
         )}
-        {screen === 'journal' && <JournalPage {...settingsProps} />}
+        {screen === 'journal' && <JournalPage {...settingsProps} intent={journalIntent} />}
         {screen === 'library' && <LibraryPage {...settingsProps} />}
         {screen === 'timer' && <TimerPage {...settingsProps} />}
         {screen === 'weight' && <WeightPage {...settingsProps} />}
       </main>
-      <BottomNav active={screen} onChange={handleNav} />
+      <BottomNav active={screen} onChange={navFromBar} />
       <SettingsMenu open={settingsOpen} onClose={closeSettings} />
     </div>
   )

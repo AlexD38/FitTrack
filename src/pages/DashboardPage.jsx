@@ -20,7 +20,9 @@ import {
   getAllExerciseNames,
   exerciseProgressSeries,
 } from '../lib/stats'
-import { statsSessionsOnly } from '../lib/sessionStatus'
+import { findActiveSession, statsSessionsOnly } from '../lib/sessionStatus'
+import { FaIcon } from '../components/FaIcon'
+import { uiIcons } from '../lib/icons'
 
 const ONBOARDING_KEY = 'ft-onboarding-seen'
 
@@ -40,6 +42,7 @@ export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
     }
   })
   const isFresh = statsSessions.length === 0
+  const activeSession = useMemo(() => findActiveSession(sessions), [sessions])
 
   useEffect(() => {
     if (!exerciseNames.length) {
@@ -100,6 +103,23 @@ export function DashboardPage({ onOpenSettings, onGoJournal, onGoWeight }) {
         </section>
       ) : (
         <>
+          <button
+            type="button"
+            className="ft-quick__primary ft-dashboard-start"
+            onClick={() => onGoJournal?.(activeSession ? 'resume' : undefined)}
+          >
+            <span className="ft-quick__primary-icon" aria-hidden="true">
+              <FaIcon icon={uiIcons.play} />
+            </span>
+            <span className="ft-quick__primary-text">
+              <span className="ft-quick__primary-title">
+                {activeSession ? t('dashboard.resumeWorkout') : t('dashboard.startWorkout')}
+              </span>
+              <span className="ft-quick__primary-meta">
+                {activeSession ? t('live.title') : t('templates.startHint')}
+              </span>
+            </span>
+          </button>
           <div className="ft-kpi-grid">
             <KpiCard label={t('dashboard.sessionsMonth')} value={monthCount} />
             <KpiCard label={t('dashboard.weekVolume')} value={weekVol} sub="kg" />

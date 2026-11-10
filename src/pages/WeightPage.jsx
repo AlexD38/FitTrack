@@ -110,7 +110,7 @@ export function WeightPage({ onOpenSettings }) {
             </div>
             <div className="ft-goal-row">
               <NumberStepper
-                value={goalDraft === '' || goalDraft == null ? 70 : goalDraft}
+                value={goalDraft === '' || goalDraft == null ? (delta.current ?? 70) : goalDraft}
                 onChange={setGoalDraft}
                 step={0.1}
                 min={20}

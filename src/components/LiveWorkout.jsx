@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
 import { ExerciseListEditor, createEmptyExercise } from './ExerciseEditor'
-import { RestTimerModal, formatRestTime, useRestTimer } from './RestTimer'
+import { RestBar, RestTimerModal, formatRestTime, useRestTimer } from './RestTimer'
 import { FaIcon } from './FaIcon'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { normalizeSetsForSave } from '../lib/sets'
@@ -25,9 +25,22 @@ function buildLiveState(payload) {
         weight: s.weight === '' || s.weight == null ? 0 : s.weight,
         reps: s.reps ?? '',
         rpe: s.rpe ?? 5,
+        ...(s.done ? { done: true } : {}),
       })),
     })),
   }
+}
+
+function countSets(exercises) {
+  let total = 0
+  let done = 0
+  for (const ex of exercises ?? []) {
+    for (const s of ex.sets ?? []) {
+      total += 1
+      if (s.done) done += 1
+    }
+  }
+  return { total, done }
 }
 
 function toPersistPayload(workout, { requireSets }) {
@@ -41,6 +54,7 @@ function toPersistPayload(workout, { requireSets }) {
             weight: s.weight === '' || s.weight == null ? 0 : s.weight,
             reps: s.reps ?? '',
             rpe: s.rpe === '' || s.rpe == null ? 5 : s.rpe,
+            ...(s.done ? { done: true } : {}),
           })),
     }))
     .filter((ex) => (requireSets ? ex.sets.length > 0 : true))
@@ -171,9 +185,11 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
     }
   }
 
-  const startRest = () => timer.start(settings.defaultRestSeconds ?? 90)
+  const startRest = () => timer.start(restSeconds, { focus: false })
 
   if (!open || !workout) return null
+
+  const progress = countSets(workout.exercises)
 
   return (
     <div className="ft-live" role="dialog" aria-modal="true" aria-label={t('live.title')}>
@@ -182,8 +198,14 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
           <div className="ft-live__header-row">
             <div className="ft-live__title-wrap">
               <h2 className="ft-live__title">{t('live.title')}</h2>
-              <p className="ft-live__elapsed" aria-live="polite">
+              <p className="ft-live__elapsed">
                 {formatDuration(elapsed)}
+                {progress.total > 0 && (
+                  <span className="ft-live__progress">
+                    {' · '}
+                    {progress.done}/{progress.total} {t('common.sets')}
+                  </span>
+                )}
               </p>
             </div>
             <div className="ft-live__header-actions">
@@ -225,11 +247,13 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
           exercises={workout.exercises}
           onChange={setExercises}
           focusMode
-          onStartRest={startRest}
+          trackDone
+          onSetDone={startRest}
         />
       </div>
 
       <footer className="ft-live__footer">
+        <RestBar timer={timer} />
         <button
           type="button"
           className="ft-btn ft-btn--primary"
@@ -251,6 +275,7 @@ export function LiveWorkout({ open, initial, sessionId, onClose, onSaved }) {
         onPause={() => timer.setRunning(false)}
         onAdd15={timer.handleAdd15}
         onClose={timer.handleClose}
+        onMinimize={() => timer.setFocused(false)}
         timeRef={timer.timeRef}
         ringRef={timer.ringRef}
       />

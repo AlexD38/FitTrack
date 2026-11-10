@@ -82,6 +82,7 @@ export function RestTimerModal({
   onPause,
   onAdd15,
   onClose,
+  onMinimize,
   timeRef,
   ringRef,
 }) {
@@ -140,12 +141,62 @@ export function RestTimerModal({
           t={t}
         />
 
-        {!running && (
-          <button type="button" className="ft-timer-modal__close" onClick={onClose}>
-            {t('timer.close')}
+        {onMinimize && running ? (
+          <button type="button" className="ft-timer-modal__close" onClick={onMinimize}>
+            {t('live.restMinimize')}
           </button>
+        ) : (
+          !running && (
+            <button type="button" className="ft-timer-modal__close" onClick={onClose}>
+              {t('timer.close')}
+            </button>
+          )
         )}
       </div>
+    </div>
+  )
+}
+
+/** Inline rest countdown that leaves the workout usable underneath. */
+export function RestBar({ timer }) {
+  const { t } = useLocale()
+  const { remaining, duration, running, done } = timer
+  if (!running && !done) return null
+  const progress = duration > 0 ? Math.min(1, Math.max(0, (duration - remaining) / duration)) : 0
+
+  return (
+    <div
+      className={`ft-rest-bar${done ? ' ft-rest-bar--done' : ''}`}
+      role="timer"
+      aria-label={t('timer.title')}
+    >
+      <span className="ft-rest-bar__fill" style={{ transform: `scaleX(${done ? 1 : progress})` }} />
+      <button
+        type="button"
+        className="ft-rest-bar__time"
+        onClick={() => timer.setFocused(true)}
+        aria-label={t('live.restExpand')}
+      >
+        <span className="ft-rest-bar__label">{done ? t('timer.done') : t('timer.rest')}</span>
+        <span className="ft-rest-bar__value">{done ? '✓' : formatRestTime(remaining)}</span>
+      </button>
+      {done ? (
+        <button type="button" className="ft-rest-bar__btn ft-rest-bar__btn--wide" onClick={timer.handleReset}>
+          {t('common.close')}
+        </button>
+      ) : (
+        <>
+          <button type="button" className="ft-rest-bar__btn" onClick={timer.handleSub15}>
+            −15
+          </button>
+          <button type="button" className="ft-rest-bar__btn" onClick={timer.handleAdd15}>
+            +15
+          </button>
+          <button type="button" className="ft-rest-bar__btn ft-rest-bar__btn--wide" onClick={timer.handleReset}>
+            {t('live.skip')}
+          </button>
+        </>
+      )}
     </div>
   )
 }
@@ -222,12 +273,12 @@ export function useRestTimer(defaultSeconds = 90) {
   }, [])
 
   const start = useCallback(
-    (seconds) => {
+    (seconds, { focus = true } = {}) => {
       const next = Math.max(5, Math.min(seconds ?? duration, 330))
       setDuration(next)
       setRemaining(next)
       setDone(false)
-      setFocused(true)
+      setFocused(focus)
       setRunning(true)
     },
     [duration],
@@ -256,6 +307,8 @@ export function useRestTimer(defaultSeconds = 90) {
 
   const handleAdd15 = useCallback(() => setRemaining((r) => r + 15), [])
 
+  const handleSub15 = useCallback(() => setRemaining((r) => Math.max(1, r - 15)), [])
+
   return {
     duration,
     remaining,
@@ -270,6 +323,7 @@ export function useRestTimer(defaultSeconds = 90) {
     handleReset,
     handleClose,
     handleAdd15,
+    handleSub15,
     setRunning,
     setFocused,
   }

@@ -19,15 +19,102 @@ import {
   normalizeSessionStatus,
   resolveSessionStatus,
   isActiveSession,
+  findActiveSession,
   todayIsoDate,
 } from '../lib/sessionStatus'
+import { format, parseISO } from 'date-fns'
+import { fr, enUS } from 'date-fns/locale'
+import { PROGRAM_TEMPLATES, templateToSession } from '../lib/templates'
+import { emptySet } from '../lib/sets'
 import { musclesFromExerciseNames } from '../lib/exercises'
 import { formatDuration } from '../lib/duration'
 import { uiIcons } from '../lib/icons'
 
 const FILTERS = ['all', SESSION_STATUS.ACTIVE, SESSION_STATUS.UPCOMING, SESSION_STATUS.PAST]
 
-export function JournalPage({ onOpenSettings }) {
+function exerciseNamesPreview(session, max = 3) {
+  const names = (session?.exercises ?? []).map((e) => e.name?.trim()).filter(Boolean)
+  if (!names.length) return ''
+  const shown = names.slice(0, max).join(' · ')
+  return names.length > max ? `${shown} +${names.length - max}` : shown
+}
+
+function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat, onFree, onTemplate, onMore }) {
+  const { locale, t } = useLocale()
+  const dateLocale = locale === 'fr' ? fr : enUS
+
+  let primary = null
+  if (active) {
+    primary = {
+      kind: 'resume',
+      title: t('journal.quickResume'),
+      meta: exerciseNamesPreview(active) || t('live.title'),
+      onClick: onResume,
+    }
+  } else if (planned) {
+    primary = {
+      kind: 'planned',
+      title: t('journal.quickPlanned'),
+      meta: exerciseNamesPreview(planned),
+      onClick: onStartPlanned,
+    }
+  } else if (last) {
+    primary = {
+      kind: 'repeat',
+      title: t('journal.quickRepeat'),
+      meta: [format(parseISO(last.date), 'EEE d MMM', { locale: dateLocale }), exerciseNamesPreview(last)]
+        .filter(Boolean)
+        .join(' — '),
+      onClick: onRepeat,
+    }
+  }
+
+  return (
+    <section className="ft-quick" aria-label={t('journal.quickStart')}>
+      <h2 className="ft-quick__title">{t('journal.quickStart')}</h2>
+      {primary && (
+        <button type="button" className="ft-quick__primary" onClick={primary.onClick}>
+          <span className="ft-quick__primary-icon" aria-hidden="true">
+            <FaIcon icon={primary.kind === 'repeat' ? uiIcons.redo : uiIcons.play} />
+          </span>
+          <span className="ft-quick__primary-text">
+            <span className="ft-quick__primary-title">{primary.title}</span>
+            {primary.meta && <span className="ft-quick__primary-meta">{primary.meta}</span>}
+          </span>
+        </button>
+      )}
+      {!active && (
+        <div className="ft-quick__chips">
+          {last && primary?.kind === 'planned' && (
+            <button type="button" className="ft-chip ft-quick__chip" onClick={onRepeat}>
+              <FaIcon icon={uiIcons.redo} className="ft-quick__chip-icon" />
+              {t('journal.quickRepeat')}
+            </button>
+          )}
+          <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
+            <FaIcon icon={uiIcons.add} className="ft-quick__chip-icon" />
+            {t('journal.quickFree')}
+          </button>
+          {PROGRAM_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.id}
+              type="button"
+              className="ft-chip ft-quick__chip"
+              onClick={() => onTemplate(templateToSession(tpl, locale))}
+            >
+              {t(`templates.${tpl.id}`)}
+            </button>
+          ))}
+          <button type="button" className="ft-chip ft-quick__chip ft-quick__chip--more" onClick={onMore}>
+            {t('journal.quickMore')}
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
+
+export function JournalPage({ onOpenSettings, intent }) {
   const {
     sessions,
     addSession,
@@ -41,7 +128,9 @@ export function JournalPage({ onOpenSettings }) {
   const startingRef = useRef(false)
 
   const [sheet, setSheet] = useState(null)
-  const [liveId, setLiveId] = useState(null)
+  const [liveId, setLiveId] = useState(() =>
+    intent === 'resume' ? (findActiveSession(sessions)?.id ?? null) : null,
+  )
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerIntent, setPickerIntent] = useState('start') // 'start' | 'plan'
   const [statusFilter, setStatusFilter] = useState('all')
@@ -62,6 +151,17 @@ export function JournalPage({ onOpenSettings }) {
   }, [sessions, statusFilter])
 
   const listEmpty = pinnedActive.length === 0 && filteredSessions.length === 0
+
+  const activeSession = useMemo(() => findActiveSession(sessions), [sessions])
+  const lastPast = useMemo(() => pastSessionsOnly(sessions)[0] ?? null, [sessions])
+  const plannedToday = useMemo(() => {
+    const today = todayIsoDate()
+    return (
+      sessions.find(
+        (s) => resolveSessionStatus(s) === SESSION_STATUS.UPCOMING && s.date === today,
+      ) ?? null
+    )
+  }, [sessions])
 
   const liveSession = useMemo(
     () => (liveId ? sessions.find((s) => s.id === liveId) : null),
@@ -159,7 +259,7 @@ export function JournalPage({ onOpenSettings }) {
     date: new Date().toISOString().slice(0, 10),
     muscles: [],
     notes: '',
-    exercises: [{ name: '', sets: [{ weight: 0, reps: '', rpe: 5 }] }],
+    exercises: [{ name: '', sets: [emptySet()] }],
   })
 
   const handlePickerCustom = () => {
@@ -201,6 +301,19 @@ export function JournalPage({ onOpenSettings }) {
     <>
       <PageHeader title={t('journal.title')} actions={<SettingsButton onClick={onOpenSettings} />} />
 
+      <QuickStart
+        active={activeSession}
+        planned={plannedToday}
+        last={lastPast}
+        onResume={() => activeSession && openLiveById(activeSession.id)}
+        onStartPlanned={() => plannedToday && handlePrimaryAction(plannedToday)}
+        onRepeat={() => lastPast && handlePrimaryAction(lastPast)}
+        onFree={() => startOrResumeLive(blankLivePayload(), { replaceActive: true })}
+        onTemplate={(payload) => startOrResumeLive(payload, { replaceActive: true })}
+        onMore={openNewSessionPicker}
+      />
+
+      <h2 className="ft-quick__title ft-quick__title--history">{t('journal.history')}</h2>
       <div className="ft-journal-filters" role="tablist" aria-label={t('journal.filterStatus')}>
         {FILTERS.map((key) => {
           const active = statusFilter === key

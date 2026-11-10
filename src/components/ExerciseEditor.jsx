@@ -49,6 +49,8 @@ export function ExerciseBlock({
   onStartRest,
   onMoveUp,
   onMoveDown,
+  trackDone = false,
+  onSetDone,
 }) {
   const { t } = useLocale()
   const [nameOpen, setNameOpen] = useState(false)
@@ -68,6 +70,13 @@ export function ExerciseBlock({
     onChange({ ...exercise, sets: nextSets })
   }
 
+  const toggleDone = (idx) => {
+    const nowDone = !sets[idx].done
+    const nextSets = sets.map((s, i) => (i === idx ? { ...s, done: nowDone } : s))
+    onChange({ ...exercise, sets: nextSets })
+    if (nowDone) onSetDone?.({ allDone: nextSets.every((s) => s.done) })
+  }
+
   const addSet = () => {
     onChange({ ...exercise, sets: [...sets, carryForwardSet(sets)] })
   }
@@ -78,8 +87,10 @@ export function ExerciseBlock({
   }
 
   if (collapsed) {
+    const doneCount = trackDone ? sets.filter((s) => s.done).length : 0
+    const allDone = trackDone && doneCount === sets.length
     return (
-      <section className="ft-ex-block ft-ex-block--collapsed">
+      <section className={`ft-ex-block ft-ex-block--collapsed${allDone ? ' ft-ex-block--complete' : ''}`}>
         <button type="button" className="ft-ex-block__collapsed" onClick={onExpand}>
           <span className="ft-ex-block__icon-wrap" aria-hidden="true">
             <FaIcon icon={uiIcons.dumbbell} className="ft-ex-block__icon" />
@@ -90,6 +101,11 @@ export function ExerciseBlock({
             </span>
             <span className="ft-ex-block__summary">{formatSetSummary(sets, t)}</span>
           </span>
+          {trackDone && (
+            <span className={`ft-ex-block__progress${allDone ? ' ft-ex-block__progress--done' : ''}`}>
+              {allDone ? <FaIcon icon={uiIcons.check} /> : `${doneCount}/${sets.length}`}
+            </span>
+          )}
           <FaIcon icon={uiIcons.chevronDown} className="ft-ex-block__chevron" />
         </button>
       </section>
@@ -144,60 +160,82 @@ export function ExerciseBlock({
         )}
       </header>
 
-      <div className="ft-set-inline" role="list" aria-label={t('common.sets')}>
+      <div
+        className={`ft-set-inline${trackDone ? ' ft-set-inline--track' : ''}`}
+        role="list"
+        aria-label={t('common.sets')}
+      >
+        <div className="ft-set-inline__head" aria-hidden="true">
+          <span>#</span>
+          <span>
+            {t('journal.weight')} ({t('common.kg')})
+          </span>
+          <span>{t('common.reps')}</span>
+          {trackDone && <span>✓</span>}
+        </div>
         {sets.map((set, i) => {
           const weight = set.weight === '' || set.weight == null ? 0 : Number(set.weight) || 0
           const reps = set.reps === '' || set.reps == null ? 0 : Number(set.reps) || 0
           const setLabel = `${t('journal.setIndex')} ${i + 1}`
+          const done = trackDone && Boolean(set.done)
           return (
-            <div key={i} className="ft-set-inline__row" role="listitem">
-              <div className="ft-set-inline__row-top">
-                <span className="ft-set-inline__cell--num">{i + 1}</span>
-                <button
-                  type="button"
-                  className="ft-set-inline__remove"
-                  onClick={() => removeSetAt(i)}
-                  disabled={sets.length <= 1}
-                  aria-label={`${t('journal.removeSet')} ${i + 1}`}
-                >
-                  <FaIcon icon={uiIcons.trash} className="ft-set-inline__remove-icon" />
-                </button>
+            <div
+              key={i}
+              className={`ft-set-inline__row${done ? ' ft-set-inline__row--done' : ''}`}
+              role="listitem"
+            >
+              <div className="ft-set-inline__main">
+                <span className="ft-set-inline__num">{i + 1}</span>
+                <NumberStepper
+                  value={weight}
+                  onChange={(v) => updateSet(i, 'weight', v)}
+                  step={WEIGHT_STEP}
+                  min={0}
+                  max={WEIGHT_MAX}
+                  ariaLabel={`${setLabel} ${t('journal.weight')}`}
+                  size="sm"
+                />
+                <NumberStepper
+                  value={reps}
+                  onChange={(v) => updateSet(i, 'reps', v)}
+                  step={1}
+                  min={0}
+                  max={REPS_MAX}
+                  ariaLabel={`${setLabel} ${t('common.reps')}`}
+                  size="sm"
+                />
+                {trackDone && (
+                  <button
+                    type="button"
+                    className={`ft-set-inline__check${done ? ' ft-set-inline__check--done' : ''}`}
+                    onClick={() => toggleDone(i)}
+                    aria-pressed={done}
+                    aria-label={`${t('live.markSet')} ${i + 1}`}
+                  >
+                    <FaIcon icon={uiIcons.check} className="ft-set-inline__check-icon" />
+                  </button>
+                )}
               </div>
 
-              <div className="ft-set-inline__metrics">
-                <div className="ft-set-inline__metric">
-                  <span className="ft-set-inline__metric-label">{t('journal.weight')}</span>
-                  <NumberStepper
-                    value={weight}
-                    onChange={(v) => updateSet(i, 'weight', v)}
-                    step={WEIGHT_STEP}
-                    min={0}
-                    max={WEIGHT_MAX}
-                    ariaLabel={`${setLabel} ${t('journal.weight')}`}
-                    size="sm"
-                  />
-                </div>
-                <div className="ft-set-inline__metric">
-                  <span className="ft-set-inline__metric-label">{t('common.reps')}</span>
-                  <NumberStepper
-                    value={reps}
-                    onChange={(v) => updateSet(i, 'reps', v)}
-                    step={1}
-                    min={0}
-                    max={REPS_MAX}
-                    ariaLabel={`${setLabel} ${t('common.reps')}`}
-                    size="sm"
-                  />
-                </div>
-                <div className="ft-set-inline__metric">
-                  <span className="ft-set-inline__metric-label">{t('rpe.label')}</span>
+              {!done && (
+                <div className="ft-set-inline__extra">
+                  <span className="ft-set-inline__extra-label">{t('rpe.label')}</span>
                   <RpeCompact
                     value={set.rpe ?? 5}
                     onChange={(v) => updateSet(i, 'rpe', v)}
                     ariaLabel={`${setLabel} ${t('rpe.label')}`}
                   />
+                  <button
+                    type="button"
+                    className="ft-set-inline__remove"
+                    onClick={() => removeSetAt(i)}
+                    disabled={sets.length <= 1}
+                    aria-label={`${t('journal.removeSet')} ${i + 1}`}
+                  >
+                    <FaIcon icon={uiIcons.trash} className="ft-set-inline__remove-icon" />
+                  </button>
                 </div>
-              </div>
+              )}
             </div>
           )
         })}
@@ -252,7 +290,14 @@ export function ExerciseBlock({
  * Inline exercise list shared by live workout + journal detail.
  * `focusMode` collapses inactive exercises so the current one stays primary.
  */
-export function ExerciseListEditor({ exercises, onChange, focusMode = false, onStartRest }) {
+export function ExerciseListEditor({
+  exercises,
+  onChange,
+  focusMode = false,
+  onStartRest,
+  trackDone = false,
+  onSetDone,
+}) {
   const { t } = useLocale()
   const list = exercises?.length ? exercises : [createEmptyExercise()]
   const [activeIndex, setActiveIndex] = useState(0)
@@ -279,6 +324,15 @@ export function ExerciseListEditor({ exercises, onChange, focusMode = false, onS
     setActiveIndex(next.length - 1)
   }
 
+  const handleSetDone = (idx, { allDone }) => {
+    onSetDone?.()
+    if (!allDone || !focusMode) return
+    const isPending = (ex) => (ex.sets ?? []).some((s) => !s.done)
+    const after = list.findIndex((ex, i) => i > idx && isPending(ex))
+    const next = after !== -1 ? after : list.findIndex((ex, i) => i !== idx && isPending(ex))
+    if (next !== -1) setActiveIndex(next)
+  }
+
   const moveAt = (idx, dir) => {
     const target = idx + dir
     if (target < 0 || target >= list.length) return
@@ -303,6 +357,8 @@ export function ExerciseListEditor({ exercises, onChange, focusMode = false, onS
             onStartRest={onStartRest}
             onMoveUp={list.length > 1 && i > 0 ? () => moveAt(i, -1) : undefined}
             onMoveDown={list.length > 1 && i < list.length - 1 ? () => moveAt(i, 1) : undefined}
+            trackDone={trackDone}
+            onSetDone={(info) => handleSetDone(i, info)}
           />
         ))}
       </div>

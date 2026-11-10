@@ -7,7 +7,10 @@ import {
   faChevronDown,
   faChevronLeft,
   faDumbbell,
+  faExpand,
+  faForward,
   faGear,
+  faRotateRight,
   faMinus,
   faRepeat,
   faMoon,
@@ -55,4 +58,7 @@ export const uiIcons = {
   arrowDown: faArrowDown,
   volumeOn: faVolumeHigh,
   volumeOff: faVolumeXmark,
+  redo: faRotateRight,
+  skip: faForward,
+  expand: faExpand,
 }

@@ -5,10 +5,10 @@ import { NumberStepper } from './NumberStepper'
 
 export function WeightForm({ onSave, onCancel }) {
   const { t } = useLocale()
-  const { settings } = useFitness()
+  const { settings, weightEntries } = useFitness()
   const unit = settings.weightUnit ?? 'kg'
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [weight, setWeight] = useState(70)
+  const [weight, setWeight] = useState(() => Number(weightEntries?.[0]?.weight) || 70)
   const [note, setNote] = useState('')
 
   const handleSubmit = (e) => {
