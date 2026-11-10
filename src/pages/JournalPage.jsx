@@ -8,7 +8,6 @@ import { LiveWorkout } from '../components/LiveWorkout'
 import { TemplatePicker } from '../components/TemplatePicker'
 import { ExerciseListEditor } from '../components/ExerciseEditor'
 import { BodyMuscleMap } from '../components/BodyMuscleMap'
-import { Fab } from '../components/Fab'
 import { FaIcon } from '../components/FaIcon'
 import { staggerListItems } from '../lib/pageTransition'
 import { useFitness } from '../contexts/FitnessContext'
@@ -73,8 +72,10 @@ function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat,
   }
 
   return (
-    <section className="ft-quick" aria-label={t('journal.quickStart')}>
-      <h2 className="ft-quick__title">{t('journal.quickStart')}</h2>
+    <section className="ft-quick ft-glass ft-glass--pad" aria-labelledby="ft-quick-title">
+      <h2 id="ft-quick-title" className="ft-section__title">
+        {t('journal.newSession')}
+      </h2>
       {primary && (
         <button type="button" className="ft-quick__primary" onClick={primary.onClick}>
           <span className="ft-quick__primary-icon" aria-hidden="true">
@@ -86,33 +87,35 @@ function QuickStart({ active, planned, last, onResume, onStartPlanned, onRepeat,
           </span>
         </button>
       )}
-      {!active && (
-        <div className="ft-quick__chips">
-          {last && primary?.kind === 'planned' && (
-            <button type="button" className="ft-chip ft-quick__chip" onClick={onRepeat}>
-              <FaIcon icon={lastIsToday ? uiIcons.play : uiIcons.redo} className="ft-quick__chip-icon" />
-              {lastIsToday ? t('journal.quickResumeToday') : t('journal.quickRepeat')}
+      <div className="ft-quick__chips">
+        {!active && (
+          <>
+            {last && primary?.kind === 'planned' && (
+              <button type="button" className="ft-chip ft-quick__chip" onClick={onRepeat}>
+                <FaIcon icon={lastIsToday ? uiIcons.play : uiIcons.redo} className="ft-quick__chip-icon" />
+                {lastIsToday ? t('journal.quickResumeToday') : t('journal.quickRepeat')}
+              </button>
+            )}
+            <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
+              <FaIcon icon={uiIcons.add} className="ft-quick__chip-icon" />
+              {t('journal.quickFree')}
             </button>
-          )}
-          <button type="button" className="ft-chip ft-quick__chip" onClick={onFree}>
-            <FaIcon icon={uiIcons.add} className="ft-quick__chip-icon" />
-            {t('journal.quickFree')}
-          </button>
-          {PROGRAM_TEMPLATES.map((tpl) => (
-            <button
-              key={tpl.id}
-              type="button"
-              className="ft-chip ft-quick__chip"
-              onClick={() => onTemplate(templateToSession(tpl, locale))}
-            >
-              {t(`templates.${tpl.id}`)}
-            </button>
-          ))}
-          <button type="button" className="ft-chip ft-quick__chip ft-quick__chip--more" onClick={onMore}>
-            {t('journal.quickMore')}
-          </button>
-        </div>
-      )}
+            {PROGRAM_TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.id}
+                type="button"
+                className="ft-chip ft-quick__chip"
+                onClick={() => onTemplate(templateToSession(tpl, locale))}
+              >
+                {t(`templates.${tpl.id}`)}
+              </button>
+            ))}
+          </>
+        )}
+        <button type="button" className="ft-chip ft-quick__chip ft-quick__chip--more" onClick={onMore}>
+          {t('journal.quickMore')}
+        </button>
+      </div>
     </section>
   )
 }
@@ -373,8 +376,6 @@ export function JournalPage({ onOpenSettings, intent }) {
           </>
         )}
       </div>
-
-      <Fab onClick={openNewSessionPicker} label={t('journal.newSession')} />
 
       <BottomSheet
         open={pickerOpen}
