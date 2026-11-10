@@ -1,15 +1,4 @@
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  startOfWeek,
-  endOfWeek,
-  subWeeks,
-  parseISO,
-  isWithinInterval,
-  subDays,
-} from 'date-fns'
-import { fr, enUS } from 'date-fns/locale'
+import { parseISO, subDays } from 'date-fns'
 import { statsSessionsOnly } from './sessionStatus'
 
 export function sessionVolume(session) {
@@ -20,40 +9,6 @@ export function sessionVolume(session) {
       (ex.sets ?? []).reduce((s, set) => s + (set.weight || 0) * (set.reps || 0), 0),
     0,
   )
-}
-
-export function sessionsThisMonth(sessions) {
-  const now = new Date()
-  const start = startOfMonth(now)
-  const end = endOfMonth(now)
-  return statsSessionsOnly(sessions).filter((s) => {
-    const d = parseISO(s.date)
-    return isWithinInterval(d, { start, end })
-  }).length
-}
-
-export function weeklyVolume(sessions, weeks = 8) {
-  const localeMap = { fr, en: enUS }
-  const result = []
-  const now = new Date()
-  const past = statsSessionsOnly(sessions)
-
-  for (let i = weeks - 1; i >= 0; i--) {
-    const weekStart = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 })
-    const weekEnd = endOfWeek(subWeeks(now, i), { weekStartsOn: 1 })
-    const vol = past
-      .filter((s) => {
-        const d = parseISO(s.date)
-        return isWithinInterval(d, { start: weekStart, end: weekEnd })
-      })
-      .reduce((sum, s) => sum + sessionVolume(s), 0)
-
-    result.push({
-      week: format(weekStart, 'd MMM', { locale: localeMap.fr }),
-      volume: vol,
-    })
-  }
-  return result
 }
 
 export function getAllExerciseNames(sessions) {
@@ -149,51 +104,6 @@ export function exerciseProgressSeries(sessions, exerciseName) {
   }
 
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date))
-}
-
-export function topExerciseProgress(sessions, days = 30) {
-  const cutoff = subDays(new Date(), days)
-  const names = getAllExerciseNames(sessions)
-  let best = null
-
-  for (const name of names) {
-    const series = exerciseProgressSeries(sessions, name)
-    const recent = series.filter((p) => parseISO(p.date) >= cutoff)
-    const older = series.filter((p) => parseISO(p.date) < cutoff)
-    if (recent.length === 0 || older.length === 0) continue
-
-    const recentMax = Math.max(...recent.map((p) => p.weight))
-    const olderMax = Math.max(...older.map((p) => p.weight))
-    const delta = recentMax - olderMax
-
-    if (!best || delta > best.delta) {
-      best = { name, delta, recentMax }
-    }
-  }
-
-  return best
-}
-
-export function muscleDistribution(sessions) {
-  const counts = {}
-  for (const s of statsSessionsOnly(sessions)) {
-    for (const m of s.muscles ?? []) {
-      counts[m] = (counts[m] || 0) + 1
-    }
-  }
-  return Object.entries(counts).map(([muscle, count]) => ({ muscle, count }))
-}
-
-export function weekVolumeTotal(sessions) {
-  const now = new Date()
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 })
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
-  return statsSessionsOnly(sessions)
-    .filter((s) => {
-      const d = parseISO(s.date)
-      return isWithinInterval(d, { start: weekStart, end: weekEnd })
-    })
-    .reduce((sum, s) => sum + sessionVolume(s), 0)
 }
 
 export function weightSeries(entries, days = 90) {

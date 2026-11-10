@@ -10,7 +10,7 @@ import {
 import { format, parseISO } from 'date-fns'
 import { useLocale } from '../../contexts/LocaleContext'
 
-export function ExerciseProgressChart({ data }) {
+export function ExerciseProgressChart({ data, unit = 'kg' }) {
   const { t } = useLocale()
   const formatted = data.map((d) => ({
     ...d,
@@ -25,7 +25,7 @@ export function ExerciseProgressChart({ data }) {
           <XAxis dataKey="label" tick={{ fill: 'var(--color-ink-muted)', fontSize: 11 }} />
           <YAxis
             tick={{ fill: 'var(--color-ink-muted)', fontSize: 11 }}
-            unit=" kg"
+            unit={` ${unit}`}
             width={48}
             domain={['auto', 'auto']}
           />
@@ -37,7 +37,7 @@ export function ExerciseProgressChart({ data }) {
               color: 'var(--color-ink)',
             }}
             formatter={(value, name) => {
-              if (name === 'weight') return [`${value} kg`, t('dashboard.liftedWeight')]
+              if (name === 'weight') return [`${value} ${unit}`, unit === 'kg' ? t('dashboard.liftedWeight') : t('common.reps')]
               if (name === 'volume') return [`${value} kg`, t('common.volume')]
               return [value, name]
             }}
