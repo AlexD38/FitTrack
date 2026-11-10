@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useLocale } from '../contexts/LocaleContext'
+import { useFitness } from '../contexts/FitnessContext'
 import { FaIcon } from './FaIcon'
 import { ExerciseAutocomplete } from './ExerciseAutocomplete'
 import { RpeCompact } from './RpeGauge'
 import { NumberStepper } from './NumberStepper'
 import { BottomSheet } from './BottomSheet'
 import { emptySet } from '../lib/sets'
+import { withLastWeights } from '../lib/lastWeights'
 import { uiIcons } from '../lib/icons'
 
 const WEIGHT_STEP = 2.5
@@ -53,13 +55,17 @@ export function ExerciseBlock({
   onSetDone,
 }) {
   const { t } = useLocale()
+  const { sessions } = useFitness()
   const [nameOpen, setNameOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const sets = exercise.sets?.length ? exercise.sets : [emptySet()]
   const displayName = exercise.name?.trim() || t('journal.exerciseName')
   const emptyName = !exercise.name?.trim()
 
-  const updateName = (name) => onChange({ ...exercise, name })
+  const updateName = (name) => {
+    const renamed = { ...exercise, name }
+    onChange(trackDone ? withLastWeights([renamed], sessions, { onlyEmpty: true })[0] : renamed)
+  }
 
   const updateSet = (idx, field, val) => {
     const nextSets = [...sets]

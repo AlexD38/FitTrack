@@ -10,6 +10,7 @@ import {
 } from 'react'
 
 import { DEFAULT_PALETTE, isValidPalette } from '../lib/palettes'
+import { withLastWeights } from '../lib/lastWeights'
 import {
   SESSION_STATUS,
   findActiveSession,
@@ -139,12 +140,20 @@ export function FitnessProvider({ children }) {
    * Abandoned unfinished #encours are removed (not archived) when replaced,
    * so Relancer / new starts don't leave ghost past duplicates.
    */
-  const beginLiveSession = useCallback((payload, { existingId, replaceActive = false } = {}) => {
-    const startedAt = payload.startedAt ?? new Date().toISOString()
+  const beginLiveSession = useCallback((rawPayload, { existingId, replaceActive = false } = {}) => {
+    const startedAt = rawPayload.startedAt ?? new Date().toISOString()
     const active = findActiveSession(stateRef.current.sessions)
 
     if (active && !replaceActive && (!existingId || active.id !== existingId)) {
       return active.id
+    }
+
+    // New sessions start from last time's weights; a planned session keeps weights already set.
+    const payload = {
+      ...rawPayload,
+      exercises: withLastWeights(rawPayload.exercises, stateRef.current.sessions, {
+        onlyEmpty: Boolean(existingId),
+      }),
     }
 
     const dropActiveId =
