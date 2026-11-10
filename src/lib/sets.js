@@ -1,6 +1,6 @@
-/** Default set: 0 kg = bodyweight allowed. */
+/** Default set: 0 kg = bodyweight allowed. Reps start at 0 for steppers. */
 export function emptySet(overrides = {}) {
-  return { weight: 0, reps: '', rpe: 5, ...overrides }
+  return { weight: 0, reps: 0, rpe: 5, ...overrides }
 }
 
 /**
@@ -10,7 +10,8 @@ export function emptySet(overrides = {}) {
 export function normalizeSetForSave(s) {
   if (s.reps === '' || s.reps == null) return null
   const reps = Number(s.reps)
-  if (Number.isNaN(reps)) return null
+  // Stepper defaults to 0 — ignore untouched sets until reps are logged.
+  if (Number.isNaN(reps) || reps <= 0) return null
 
   const rawW = s.weight
   const weight =

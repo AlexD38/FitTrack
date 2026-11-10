@@ -9,6 +9,7 @@ import { BottomSheet } from '../components/BottomSheet'
 import { WeightForm } from '../components/WeightForm'
 import { WeightTrendChart } from '../components/charts/WeightTrendChart'
 import { GlassCard } from '../components/GlassCard'
+import { NumberStepper } from '../components/NumberStepper'
 import { useFitness } from '../contexts/FitnessContext'
 import { useLocale } from '../contexts/LocaleContext'
 import { weightSeries, weightDelta } from '../lib/stats'
@@ -108,15 +109,14 @@ export function WeightPage({ onOpenSettings }) {
               <h2 className="ft-section__title">{t('goals.weightGoal')}</h2>
             </div>
             <div className="ft-goal-row">
-              <input
-                className="ft-input"
-                type="number"
-                inputMode="decimal"
-                step="0.1"
-                placeholder={t('goals.target')}
-                aria-label={`${t('goals.target')} (${unit})`}
-                value={goalDraft}
-                onChange={(e) => setGoalDraft(e.target.value)}
+              <NumberStepper
+                value={goalDraft === '' || goalDraft == null ? 70 : goalDraft}
+                onChange={setGoalDraft}
+                step={0.1}
+                min={20}
+                max={400}
+                ariaLabel={`${t('goals.target')} (${unit})`}
+                size="md"
               />
               <span className="ft-goal-unit">{unit}</span>
               <button type="button" className="ft-btn ft-btn--primary" onClick={saveGoal}>

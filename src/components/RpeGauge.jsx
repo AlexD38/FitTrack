@@ -1,6 +1,7 @@
 import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
+import { NumberStepper } from './NumberStepper'
 
 /** Green (easy) → yellow → orange → red (max effort) */
 export const RPE_GRADIENT =
@@ -28,33 +29,18 @@ export function RpeCompact({ value, onChange, ariaLabel }) {
   const tint = rpeColor(numeric)
 
   return (
-    <div className="ft-rpe-compact" style={{ '--ft-rpe-thumb': tint }}>
-      <button
-        type="button"
-        className="ft-rpe-compact__btn"
-        onClick={() => onChange(Math.max(1, numeric - 1))}
-        disabled={numeric <= 1}
-        aria-label={`${ariaLabel ?? t('rpe.label')} −`}
-      >
-        <FaIcon icon={uiIcons.minus} className="ft-rpe-compact__icon" />
-      </button>
-      <span
-        className="ft-rpe-compact__value"
-        style={{ color: tint, background: `${tint}22` }}
-        aria-live="polite"
-      >
-        {numeric}
-      </span>
-      <button
-        type="button"
-        className="ft-rpe-compact__btn"
-        onClick={() => onChange(Math.min(10, numeric + 1))}
-        disabled={numeric >= 10}
-        aria-label={`${ariaLabel ?? t('rpe.label')} +`}
-      >
-        <FaIcon icon={uiIcons.add} className="ft-rpe-compact__icon" />
-      </button>
-    </div>
+    <NumberStepper
+      className="ft-stepper--rpe"
+      value={numeric}
+      onChange={onChange}
+      step={1}
+      min={1}
+      max={10}
+      emptyAs={5}
+      ariaLabel={ariaLabel ?? t('rpe.label')}
+      valueStyle={{ color: tint, background: `${tint}22` }}
+      size="sm"
+    />
   )
 }
 

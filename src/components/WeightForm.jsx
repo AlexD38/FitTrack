@@ -1,18 +1,19 @@
 import { useState } from 'react'
 import { useLocale } from '../contexts/LocaleContext'
 import { useFitness } from '../contexts/FitnessContext'
+import { NumberStepper } from './NumberStepper'
 
 export function WeightForm({ onSave, onCancel }) {
   const { t } = useLocale()
   const { settings } = useFitness()
   const unit = settings.weightUnit ?? 'kg'
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [weight, setWeight] = useState('')
+  const [weight, setWeight] = useState(70)
   const [note, setNote] = useState('')
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!weight) return
+    if (!weight || Number(weight) <= 0) return
     onSave({ date, weight: Number(weight), note })
   }
 
@@ -32,14 +33,14 @@ export function WeightForm({ onSave, onCancel }) {
         <label className="ft-field__label">
           {t('weight.weight')} ({unit})
         </label>
-        <input
-          className="ft-input"
-          type="number"
-          inputMode="decimal"
-          step="0.1"
+        <NumberStepper
           value={weight}
-          onChange={(e) => setWeight(e.target.value)}
-          required
+          onChange={setWeight}
+          step={0.1}
+          min={20}
+          max={400}
+          ariaLabel={`${t('weight.weight')} (${unit})`}
+          size="lg"
         />
       </div>
       <div className="ft-field">

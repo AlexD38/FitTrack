@@ -3,22 +3,14 @@ import { useLocale } from '../contexts/LocaleContext'
 import { FaIcon } from './FaIcon'
 import { ExerciseAutocomplete } from './ExerciseAutocomplete'
 import { RpeCompact } from './RpeGauge'
+import { NumberStepper } from './NumberStepper'
 import { BottomSheet } from './BottomSheet'
 import { emptySet } from '../lib/sets'
 import { uiIcons } from '../lib/icons'
 
-function parseWeight(val) {
-  const cleaned = String(val).replace(',', '.').replace(/[^\d.]/g, '')
-  if (cleaned === '' || cleaned === '.') return ''
-  if (/^\d+\.$/.test(cleaned)) return cleaned
-  const n = Number(cleaned)
-  return Number.isNaN(n) ? '' : n
-}
-
-function parseReps(val) {
-  const cleaned = String(val).replace(/\D/g, '')
-  return cleaned === '' ? '' : Number(cleaned)
-}
+const WEIGHT_STEP = 2.5
+const WEIGHT_MAX = 500
+const REPS_MAX = 100
 
 export function createEmptyExercise() {
   return { name: '', sets: [emptySet()] }
@@ -42,7 +34,7 @@ function carryForwardSet(sets) {
   const last = current[current.length - 1]
   return emptySet({
     weight: last.weight !== '' && last.weight != null ? last.weight : 0,
-    reps: last.reps !== '' && last.reps != null ? last.reps : '',
+    reps: last.reps !== '' && last.reps != null ? last.reps : 0,
     rpe: last.rpe !== '' && last.rpe != null ? last.rpe : 5,
   })
 }
@@ -69,8 +61,8 @@ export function ExerciseBlock({
   const updateSet = (idx, field, val) => {
     const nextSets = [...sets]
     let next = val
-    if (field === 'weight') next = parseWeight(val)
-    else if (field === 'reps') next = parseReps(val)
+    if (field === 'weight') next = Number(val) || 0
+    else if (field === 'reps') next = val === '' || val == null ? 0 : Number(val)
     else if (field === 'rpe') next = val === '' || val == null ? 5 : Number(val)
     nextSets[idx] = { ...nextSets[idx], [field]: next }
     onChange({ ...exercise, sets: nextSets })
@@ -152,83 +144,63 @@ export function ExerciseBlock({
         )}
       </header>
 
-      <div className="ft-set-inline" role="table" aria-label={t('common.sets')}>
-        <div className="ft-set-inline__header" role="row">
-          <span className="ft-set-inline__cell ft-set-inline__cell--num" role="columnheader">
-            #
-          </span>
-          <span className="ft-set-inline__cell" role="columnheader">
-            {t('journal.weight')}
-          </span>
-          <span className="ft-set-inline__cell" role="columnheader">
-            {t('common.reps')}
-          </span>
-          <span className="ft-set-inline__cell ft-set-inline__cell--rpe" role="columnheader">
-            {t('rpe.label')}
-          </span>
-          <span className="ft-set-inline__cell ft-set-inline__cell--action" role="columnheader">
-            <span className="ft-sr-only">{t('common.delete')}</span>
-          </span>
-        </div>
+      <div className="ft-set-inline" role="list" aria-label={t('common.sets')}>
+        {sets.map((set, i) => {
+          const weight = set.weight === '' || set.weight == null ? 0 : Number(set.weight) || 0
+          const reps = set.reps === '' || set.reps == null ? 0 : Number(set.reps) || 0
+          const setLabel = `${t('journal.setIndex')} ${i + 1}`
+          return (
+            <div key={i} className="ft-set-inline__row" role="listitem">
+              <div className="ft-set-inline__row-top">
+                <span className="ft-set-inline__cell--num">{i + 1}</span>
+                <button
+                  type="button"
+                  className="ft-set-inline__remove"
+                  onClick={() => removeSetAt(i)}
+                  disabled={sets.length <= 1}
+                  aria-label={`${t('journal.removeSet')} ${i + 1}`}
+                >
+                  <FaIcon icon={uiIcons.trash} className="ft-set-inline__remove-icon" />
+                </button>
+              </div>
 
-        {sets.map((set, i) => (
-          <div key={i} className="ft-set-inline__row" role="row">
-            <span className="ft-set-inline__cell ft-set-inline__cell--num" role="cell">
-              {i + 1}
-            </span>
-            <label className="ft-set-inline__cell" role="cell">
-              <span className="ft-sr-only">{t('journal.weight')}</span>
-              <input
-                className="ft-input ft-set-inline__input"
-                type="text"
-                inputMode="decimal"
-                enterKeyHint="next"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="0"
-                value={set.weight === '' || set.weight == null ? 0 : set.weight}
-                onChange={(e) => updateSet(i, 'weight', e.target.value)}
-                aria-label={`${t('journal.setIndex')} ${i + 1} ${t('journal.weight')}`}
-              />
-            </label>
-            <label className="ft-set-inline__cell" role="cell">
-              <span className="ft-sr-only">{t('common.reps')}</span>
-              <input
-                className="ft-input ft-set-inline__input"
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                enterKeyHint="done"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                placeholder="—"
-                value={set.reps}
-                onChange={(e) => updateSet(i, 'reps', e.target.value)}
-                aria-label={`${t('journal.setIndex')} ${i + 1} ${t('common.reps')}`}
-              />
-            </label>
-            <div className="ft-set-inline__cell ft-set-inline__cell--rpe" role="cell">
-              <RpeCompact
-                value={set.rpe ?? 5}
-                onChange={(v) => updateSet(i, 'rpe', v)}
-                ariaLabel={`${t('journal.setIndex')} ${i + 1} ${t('rpe.label')}`}
-              />
+              <div className="ft-set-inline__metrics">
+                <div className="ft-set-inline__metric">
+                  <span className="ft-set-inline__metric-label">{t('journal.weight')}</span>
+                  <NumberStepper
+                    value={weight}
+                    onChange={(v) => updateSet(i, 'weight', v)}
+                    step={WEIGHT_STEP}
+                    min={0}
+                    max={WEIGHT_MAX}
+                    ariaLabel={`${setLabel} ${t('journal.weight')}`}
+                    size="sm"
+                  />
+                </div>
+                <div className="ft-set-inline__metric">
+                  <span className="ft-set-inline__metric-label">{t('common.reps')}</span>
+                  <NumberStepper
+                    value={reps}
+                    onChange={(v) => updateSet(i, 'reps', v)}
+                    step={1}
+                    min={0}
+                    max={REPS_MAX}
+                    ariaLabel={`${setLabel} ${t('common.reps')}`}
+                    size="sm"
+                  />
+                </div>
+                <div className="ft-set-inline__metric">
+                  <span className="ft-set-inline__metric-label">{t('rpe.label')}</span>
+                  <RpeCompact
+                    value={set.rpe ?? 5}
+                    onChange={(v) => updateSet(i, 'rpe', v)}
+                    ariaLabel={`${setLabel} ${t('rpe.label')}`}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="ft-set-inline__cell ft-set-inline__cell--action" role="cell">
-              <button
-                type="button"
-                className="ft-set-inline__remove"
-                onClick={() => removeSetAt(i)}
-                disabled={sets.length <= 1}
-                aria-label={`${t('journal.removeSet')} ${i + 1}`}
-              >
-                <FaIcon icon={uiIcons.minus} className="ft-set-inline__remove-icon" />
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       <div className={`ft-ex-block__set-actions${onStartRest ? '' : ' ft-ex-block__set-actions--single'}`}>
