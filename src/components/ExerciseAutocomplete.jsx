@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { EXERCISE_LIBRARY, exerciseLabel } from '../lib/exercises'
+import {
+  equipmentLabel,
+  exerciseLabel,
+  findLibraryExercise,
+  groupedLibrary,
+} from '../lib/exercises'
 import { MUSCLE_GROUPS } from '../lib/muscles'
 import { muscleLabel } from '../lib/i18n'
 import { useLocale } from '../contexts/LocaleContext'
@@ -9,39 +14,60 @@ import { BottomSheet } from './BottomSheet'
 import { FaIcon } from './FaIcon'
 import { uiIcons } from '../lib/icons'
 
+const LIBRARY_GROUPS = groupedLibrary()
+
+function capitalize(text) {
+  return text ? text.charAt(0).toUpperCase() + text.slice(1) : text
+}
+
 export function ExerciseAutocomplete({ value, onChange, placeholder }) {
   const { locale, t } = useLocale()
   const { sessions } = useFitness()
   const [open, setOpen] = useState(false)
   const [muscleFilter, setMuscleFilter] = useState(null)
+  const [query, setQuery] = useState('')
 
   const history = useMemo(() => getAllExerciseNames(sessions), [sessions])
   const recent = useMemo(() => getRecentExerciseNames(sessions, 5), [sessions])
+  const selectedId = findLibraryExercise(value)?.id ?? null
 
-  const options = useMemo(() => {
-    const fromLib = EXERCISE_LIBRARY.map((ex) => ({
-      name: exerciseLabel(ex, locale),
-      muscle: ex.muscle,
-      source: 'library',
-    }))
-    const fromHistory = history
-      .filter((n) => n && !fromLib.some((e) => e.name.toLowerCase() === n.toLowerCase()))
-      .map((name) => ({ name, muscle: null, source: 'history' }))
+  const groups = useMemo(() => {
     const collator = new Intl.Collator(locale === 'en' ? 'en' : 'fr', { sensitivity: 'base' })
-    return [...fromHistory, ...fromLib].sort((a, b) => collator.compare(a.name, b.name))
-  }, [locale, history])
+    return LIBRARY_GROUPS.map((g) => ({
+      ...g,
+      label: locale === 'en' ? g.baseEn : g.baseFr,
+    })).sort((a, b) => collator.compare(a.label, b.label))
+  }, [locale])
 
-  const filtered = useMemo(() => {
-    if (!muscleFilter) return options
-    if (muscleFilter === 'history') return options.filter((o) => o.source === 'history')
-    if (muscleFilter === 'recent') {
-      return recent.map((name) => ({ name, muscle: null, source: 'recent' }))
-    }
-    return options.filter((o) => o.muscle === muscleFilter)
-  }, [options, muscleFilter, recent])
+  /** Names typed by the user that aren't library exercises. */
+  const customNames = useMemo(
+    () => history.filter((n) => n && !findLibraryExercise(n)),
+    [history],
+  )
+
+  const q = query.trim().toLowerCase()
+  const matchesQuery = (text) => !q || text.toLowerCase().includes(q)
+
+  const visibleGroups = useMemo(() => {
+    if (muscleFilter === 'history' || muscleFilter === 'recent') return []
+    return groups.filter((g) => {
+      if (muscleFilter && g.muscle !== muscleFilter) return false
+      if (!q) return true
+      return (
+        g.label.toLowerCase().includes(q) ||
+        g.variants.some((v) => exerciseLabel(v, locale).toLowerCase().includes(q))
+      )
+    })
+  }, [groups, muscleFilter, q, locale])
+
+  const visibleCustom =
+    muscleFilter == null || muscleFilter === 'history' ? customNames.filter(matchesQuery) : []
 
   useEffect(() => {
-    if (!open) setMuscleFilter(null)
+    if (!open) {
+      setMuscleFilter(null)
+      setQuery('')
+    }
   }, [open])
 
   const pick = (name) => {
@@ -49,7 +75,7 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
     setOpen(false)
   }
 
-  const showRecentBlock = muscleFilter == null && recent.length > 0
+  const showRecentBlock = (muscleFilter == null && !q && recent.length > 0) || muscleFilter === 'recent'
 
   return (
     <div className="ft-exercise-picker">
@@ -76,7 +102,15 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
       </div>
 
       <BottomSheet open={open} onClose={() => setOpen(false)} title={t('dashboard.selectExercise')}>
-        <p className="ft-exercise-picker__compose-hint">{t('journal.exerciseRenameHint')}</p>
+        <input
+          className="ft-input ft-exercise-picker__search"
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t('library.searchPlaceholder')}
+          autoComplete="off"
+          aria-label={t('library.search')}
+        />
 
         <div className="ft-exercise-picker__filters" role="tablist">
           <button
@@ -95,7 +129,7 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
               {t('journal.recentExercises')}
             </button>
           )}
-          {history.length > 0 && (
+          {customNames.length > 0 && (
             <button
               type="button"
               className={`ft-chip${muscleFilter === 'history' ? ' ft-chip--active' : ''}`}
@@ -119,12 +153,29 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
           ))}
         </div>
 
-        {showRecentBlock && (
-          <div className="ft-exercise-picker__recent">
-            <p className="ft-exercise-picker__section-title">{t('journal.recentExercises')}</p>
-            <ul className="ft-exercise-picker__list ft-exercise-picker__list--compact" role="listbox">
-              {recent.map((name) => (
-                <li key={`recent-${name}`}>
+        <div className="ft-exercise-picker__scroll">
+          {showRecentBlock && (
+            <div className="ft-exercise-picker__recent">
+              <p className="ft-exercise-picker__section-title">{t('journal.recentExercises')}</p>
+              <div className="ft-exercise-picker__recent-chips">
+                {recent.map((name) => (
+                  <button
+                    key={`recent-${name}`}
+                    type="button"
+                    className={`ft-chip ft-exercise-picker__recent-chip${value === name ? ' ft-chip--active' : ''}`}
+                    onClick={() => pick(name)}
+                  >
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {visibleCustom.length > 0 && (
+            <ul className="ft-exercise-picker__list" role="listbox">
+              {visibleCustom.map((name) => (
+                <li key={`custom-${name}`}>
                   <button
                     type="button"
                     className={`ft-exercise-picker__item${value === name ? ' ft-exercise-picker__item--selected' : ''}`}
@@ -133,33 +184,68 @@ export function ExerciseAutocomplete({ value, onChange, placeholder }) {
                     aria-selected={value === name}
                   >
                     <span>{name}</span>
+                    <span className="ft-autocomplete__badge">★</span>
                   </button>
                 </li>
               ))}
             </ul>
-          </div>
-        )}
+          )}
 
-        {muscleFilter == null && (
-          <p className="ft-exercise-picker__section-title">{t('library.title')}</p>
-        )}
+          {visibleGroups.length > 0 && muscleFilter == null && (
+            <p className="ft-exercise-picker__section-title">{t('library.title')}</p>
+          )}
 
-        <ul className="ft-exercise-picker__list" role="listbox">
-          {filtered.map((s) => (
-            <li key={`${s.source}-${s.name}`}>
-              <button
-                type="button"
-                className={`ft-exercise-picker__item${value === s.name ? ' ft-exercise-picker__item--selected' : ''}`}
-                onClick={() => pick(s.name)}
-                role="option"
-                aria-selected={value === s.name}
-              >
-                <span>{s.name}</span>
-                {s.source === 'history' && <span className="ft-autocomplete__badge">★</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+          <ul className="ft-exercise-picker__groups">
+            {visibleGroups.map((g) => {
+              const single = g.variants.length === 1
+              const groupSelected = g.variants.some((v) => v.id === selectedId)
+              if (single) {
+                const only = g.variants[0]
+                return (
+                  <li key={g.baseId} className="ft-exercise-group">
+                    <button
+                      type="button"
+                      className={`ft-exercise-group__single${groupSelected ? ' ft-exercise-group__single--selected' : ''}`}
+                      onClick={() => pick(exerciseLabel(only, locale))}
+                    >
+                      <span className="ft-exercise-group__name">{g.label}</span>
+                      {only.equipment && (
+                        <span className="ft-exercise-group__equip">
+                          {capitalize(equipmentLabel(only.equipment, locale))}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                )
+              }
+              return (
+                <li
+                  key={g.baseId}
+                  className={`ft-exercise-group${groupSelected ? ' ft-exercise-group--selected' : ''}`}
+                >
+                  <span className="ft-exercise-group__name">{g.label}</span>
+                  <span className="ft-exercise-group__variants" role="group" aria-label={g.label}>
+                    {g.variants.map((v) => (
+                      <button
+                        key={v.id}
+                        type="button"
+                        className={`ft-exercise-group__variant${v.id === selectedId ? ' ft-exercise-group__variant--selected' : ''}`}
+                        onClick={() => pick(exerciseLabel(v, locale))}
+                        aria-label={exerciseLabel(v, locale)}
+                      >
+                        {capitalize(equipmentLabel(v.equipment, locale))}
+                      </button>
+                    ))}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+
+          {visibleGroups.length === 0 && visibleCustom.length === 0 && !showRecentBlock && (
+            <p className="ft-exercise-picker__empty">{t('library.empty')}</p>
+          )}
+        </div>
       </BottomSheet>
     </div>
   )

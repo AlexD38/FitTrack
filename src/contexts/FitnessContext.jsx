@@ -11,6 +11,7 @@ import {
 
 import { DEFAULT_PALETTE, isValidPalette } from '../lib/palettes'
 import { withLastPerformance } from '../lib/lastPerformance'
+import { canonicalExerciseName } from '../lib/exercises'
 import {
   SESSION_STATUS,
   findActiveSession,
@@ -42,6 +43,13 @@ function uid(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 }
 
+/** Names saved before exercise variants existed map to their default variant. */
+function withCanonicalExerciseNames(session) {
+  const rename = (list) =>
+    Array.isArray(list) ? list.map((ex) => ({ ...ex, name: canonicalExerciseName(ex.name) })) : list
+  return { ...session, exercises: rename(session.exercises), liveDraft: rename(session.liveDraft) }
+}
+
 function normalizeState(parsed) {
   if (!parsed) return null
   const settings = { ...DEFAULT_SETTINGS, ...parsed.settings }
@@ -50,8 +58,11 @@ function normalizeState(parsed) {
   if (!settings.exerciseGoals || typeof settings.exerciseGoals !== 'object') {
     settings.exerciseGoals = {}
   }
+  settings.exerciseGoals = Object.fromEntries(
+    Object.entries(settings.exerciseGoals).map(([name, goal]) => [canonicalExerciseName(name), goal]),
+  )
   const sessions = Array.isArray(parsed.sessions)
-    ? parsed.sessions.map((s) => withSessionStatus(s))
+    ? parsed.sessions.map((s) => withSessionStatus(withCanonicalExerciseNames(s)))
     : []
   return {
     sessions,

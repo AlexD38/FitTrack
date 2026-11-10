@@ -4,10 +4,21 @@ import { SettingsButton } from '../components/SettingsMenu'
 import { BodyMuscleMap } from '../components/BodyMuscleMap'
 import { ExerciseThumb } from '../components/ExerciseThumb'
 import { EmptyState } from '../components/EmptyState'
-import { EXERCISE_LIBRARY, exerciseLabel } from '../lib/exercises'
+import { equipmentLabel, exerciseLabel, groupedLibrary } from '../lib/exercises'
 import { MUSCLE_GROUPS, getMuscleColor } from '../lib/muscles'
 import { muscleLabel } from '../lib/i18n'
 import { useLocale } from '../contexts/LocaleContext'
+
+const LIBRARY_GROUPS = groupedLibrary()
+
+function groupLabel(group, locale) {
+  return locale === 'en' ? group.baseEn : group.baseFr
+}
+
+function equipmentList(group, locale) {
+  const labels = group.variants.map((v) => v.equipment).filter(Boolean).map((e) => equipmentLabel(e, locale))
+  return labels.map((l) => l.charAt(0).toUpperCase() + l.slice(1)).join(' · ')
+}
 
 export function LibraryPage({ onOpenSettings }) {
   const { locale, t } = useLocale()
@@ -18,24 +29,26 @@ export function LibraryPage({ onOpenSettings }) {
   const exercises = useMemo(() => {
     const collator = new Intl.Collator(locale === 'en' ? 'en' : 'fr', { sensitivity: 'base' })
     const q = query.trim().toLowerCase()
-    return EXERCISE_LIBRARY.filter((ex) => {
-      if (muscleFilter && ex.muscle !== muscleFilter) return false
+    return LIBRARY_GROUPS.filter((g) => {
+      if (muscleFilter && g.muscle !== muscleFilter) return false
       if (!q) return true
-      const name = exerciseLabel(ex, locale).toLowerCase()
-      return name.includes(q) || ex.id.includes(q)
-    }).sort((a, b) => collator.compare(exerciseLabel(a, locale), exerciseLabel(b, locale)))
+      return (
+        groupLabel(g, locale).toLowerCase().includes(q) ||
+        g.variants.some((v) => exerciseLabel(v, locale).toLowerCase().includes(q))
+      )
+    }).sort((a, b) => collator.compare(groupLabel(a, locale), groupLabel(b, locale)))
   }, [locale, muscleFilter, query])
 
-  const selected = selectedId ? EXERCISE_LIBRARY.find((ex) => ex.id === selectedId) : null
+  const selected = selectedId ? LIBRARY_GROUPS.find((g) => g.baseId === selectedId) : null
   const activeMuscles = selected
     ? [selected.muscle]
     : muscleFilter
       ? [muscleFilter]
       : []
 
-  const selectExercise = (ex) => {
-    setSelectedId(ex.id)
-    setMuscleFilter(ex.muscle)
+  const selectExercise = (group) => {
+    setSelectedId(group.baseId)
+    setMuscleFilter(group.muscle)
   }
 
   return (
@@ -45,7 +58,7 @@ export function LibraryPage({ onOpenSettings }) {
       <section className="ft-section ft-glass ft-glass--pad ft-library__map">
         <p className="ft-library__map-hint">
           {selected
-            ? `${exerciseLabel(selected, locale)} → ${muscleLabel(locale, selected.muscle)}`
+            ? `${groupLabel(selected, locale)} → ${muscleLabel(locale, selected.muscle)}`
             : muscleFilter
               ? t('library.filterHint')
               : t('library.pickHint')}
@@ -103,10 +116,11 @@ export function LibraryPage({ onOpenSettings }) {
 
       <ul className="ft-library__list">
         {exercises.map((ex) => {
-          const name = exerciseLabel(ex, locale)
-          const active = selectedId === ex.id
+          const name = groupLabel(ex, locale)
+          const active = selectedId === ex.baseId
+          const equipment = equipmentList(ex, locale)
           return (
-            <li key={ex.id}>
+            <li key={ex.baseId}>
               <button
                 type="button"
                 className={`ft-library__item${active ? ' ft-library__item--active' : ''}`}
@@ -121,6 +135,7 @@ export function LibraryPage({ onOpenSettings }) {
                   >
                     {muscleLabel(locale, ex.muscle)}
                   </span>
+                  {equipment && <span className="ft-library__item-equip">{equipment}</span>}
                 </span>
               </button>
             </li>

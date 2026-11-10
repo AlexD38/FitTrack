@@ -1,4 +1,4 @@
-import { EXERCISE_LIBRARY, exerciseLabel } from './exercises'
+import { exerciseLabel, getLibraryExercise } from './exercises'
 
 function sets(n, reps = 10) {
   return Array.from({ length: n }, () => ({ weight: 0, reps, rpe: 5 }))
@@ -92,7 +92,7 @@ export function templateToSession(template, locale = 'fr') {
     muscles: [...template.muscles],
     notes: '',
     exercises: template.exercises.map((e) => {
-      const lib = EXERCISE_LIBRARY.find((x) => x.id === e.exerciseId)
+      const lib = getLibraryExercise(e.exerciseId)
       const name = lib ? exerciseLabel(lib, locale) : e.exerciseId
       return {
         name,

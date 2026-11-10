@@ -1,10 +1,7 @@
 import { isPastSession } from './sessionStatus'
+import { exerciseKey } from './exercises'
 
 const FIELDS = ['weight', 'reps']
-
-function normalizeName(name) {
-  return (name ?? '').trim().toLocaleLowerCase()
-}
 
 function byMostRecent(a, b) {
   const byDate = (b.date ?? '').localeCompare(a.date ?? '')
@@ -18,12 +15,12 @@ function isLogged(set) {
 
 /** Sets of `name` in the most recent finished session that logged it, or null. */
 export function lastExerciseSets(sessions, name) {
-  const key = normalizeName(name)
-  if (!key) return null
+  if (!name?.trim()) return null
+  const key = exerciseKey(name)
   const past = (sessions ?? []).filter(isPastSession).sort(byMostRecent)
   for (const session of past) {
     const ex = (session.exercises ?? []).find(
-      (e) => normalizeName(e.name) === key && (e.sets ?? []).some(isLogged),
+      (e) => exerciseKey(e.name) === key && (e.sets ?? []).some(isLogged),
     )
     if (ex) return ex.sets
   }
